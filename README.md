@@ -1,6 +1,6 @@
 ### 这个项目，是为了测试在使用AI辅助编程的条件下，手撸一个JSEngine需要多长时间？
 
-### 使用的哪些AI工具？
+### 使用了哪些AI工具？
 - ChatGpt3.5：可以免费使用
 - Bing Chat：这个可以免费蹭到ChatGpt4版本
 - CodeGeex：可以在IDEA中免费使用的AI自动补全插件，这个插件是Bing Chat推荐给我的
