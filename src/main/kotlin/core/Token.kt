@@ -31,6 +31,9 @@ enum class TokenType {
     // 空字面量
     NULL_LITERAL,
 
+    // 正则表达式字面量
+    REGEX_LITERAL,
+
     // 运算符
     OPERATOR,
 
@@ -73,6 +76,12 @@ enum class TokenType {
     // 右括号
     CLOSE_PAREN,
 
+    // 左中括号
+    OPEN_BRACKET,
+
+    // 右中括号
+    CLOSE_BRACKET,
+
     // 左大括号
     OPEN_BRACE,
 
@@ -105,4 +114,55 @@ enum class TokenType {
 
     // 关键字delete
     KEYWORD_DELETE,
+
+    // 关键字void
+    KEYWORD_VOID,
+
+    // 关键字typeof
+    KEYWORD_TYPEOF,
+
+    // 关键字this
+    KEYWORD_THIS,
+
+    // ++
+    OPERATOR_INCREMENT,
+
+    // --
+    OPERATOR_DECREMENT,
+
+    // +
+    OPERATOR_PLUS,
+
+    // -
+    OPERATOR_MINUS,
+
+    // *
+    OPERATOR_MULTIPLY,
+
+    // /
+    OPERATOR_DIVIDE,
+
+    // %
+    OPERATOR_MODULO,
+
+    // ==
+    OPERATOR_EQUAL,
+
+    // !=
+    OPERATOR_NOT_EQUAL,
+
+    // >
+    OPERATOR_GREATER,
+
+    // <
+    OPERATOR_LESS,
+
+    // >=
+    OPERATOR_GREATER_EQUAL,
+
+    // ~
+    OPERATOR_BIT_NOT,
+
+    // !
+    OPERATOR_NOT,
 }

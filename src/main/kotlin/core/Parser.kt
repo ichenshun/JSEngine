@@ -1,6 +1,10 @@
 package core
 
-
+/**
+ *  解析器
+ *  https://github.com/antlr/grammars-v4/blob/master/javascript/ecmascript/JavaScript/ECMAScript.g4
+ *  参考antlr4的JavaScript语法定义
+ */
 class Parser(private val lexer: Lexer) {
     fun parse(): JsNode {
         return parseProgram()
@@ -113,7 +117,64 @@ class Parser(private val lexer: Lexer) {
             TokenType.KEYWORD_FUNCTION -> return parseFunctionExpression()
             TokenType.KEYWORD_NEW -> return parseNewExpression()
             TokenType.KEYWORD_DELETE -> return parseDeleteExpression()
+            TokenType.KEYWORD_VOID -> return parseVoidExpression()
+            TokenType.KEYWORD_TYPEOF -> return parseTypeofExpression()
+            TokenType.OPERATOR_INCREMENT -> return parsePreIncrementExpression()
+            TokenType.OPERATOR_DECREMENT -> return parsePreDecreaseExpression()
+            TokenType.OPERATOR_PLUS -> return parseUnaryPlusExpression()
+            TokenType.OPERATOR_MINUS -> return parseUnaryMinusExpression()
+            TokenType.OPERATOR_BIT_NOT -> return parseBitNotExpression()
+            TokenType.OPERATOR_NOT -> return parseNotExpression()
+            TokenType.KEYWORD_THIS -> return parseThisExpression()
+            TokenType.IDENTIFIER -> return parseIdentifierExpression()
+            TokenType.OPEN_PAREN -> return parseParenthesizedExpression()
+            TokenType.NULL_LITERAL -> return parseNullLiteralExpression()
+            TokenType.BOOLEAN_LITERAL -> return parseBooleanLiteralExpression()
+            TokenType.STRING_LITERAL -> return parseStringLiteralExpression()
+            TokenType.NUMBER_LITERAL -> return parseNumericLiteralExpression()
+            TokenType.REGEX_LITERAL -> return parseRegularExpressionLiteralExpression()
+            TokenType.OPEN_BRACKET -> return parseArrayLiteralExpression()
+            TokenType.OPEN_BRACE -> return parseObjectLiteralExpression()
+            else -> throw IllegalStateException("Unexpected token: " + lexer.currentToken)
         }
+    }
+
+    private fun parseObjectLiteralExpression(): JsSingleExpression {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseArrayLiteralExpression(): JsSingleExpression {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseRegularExpressionLiteralExpression(): JsRegExpLiteral {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseNumericLiteralExpression(): JsNumericLiteralExpression {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseStringLiteralExpression(): JsStringLiteralExpression {
+        val token = requireToken(TokenType.STRING_LITERAL)
+        return JsStringLiteralExpression(token.value)
+    }
+
+    private fun parseBooleanLiteralExpression(): JsBooleanLiteralExpression {
+        requireToken(TokenType.BOOLEAN_LITERAL)
+        return JsBooleanLiteralExpression(lexer.currentToken.value == "true")
+    }
+
+    private fun parseNullLiteralExpression(): JsNullLiteral {
+        requireToken(TokenType.NULL_LITERAL)
+        return JsNullLiteral()
+    }
+
+    private fun parseParenthesizedExpression(): JsParenthesizedExpression {
+        requireToken(TokenType.OPEN_PAREN)
+        val expressions = parseExpressionSequence()
+        requireToken(TokenType.CLOSE_PAREN)
+        return JsParenthesizedExpression(parseExpressionSequence())
     }
 
     private fun parseFunctionExpression(): JsFunctionExpression {
@@ -144,7 +205,66 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseDeleteExpression(): JsDeleteExpression {
-        TODO("Not yet implemented")
+        requireToken(TokenType.KEYWORD_DELETE)
+        val expression = parseSingleExpression()
+        return JsDeleteExpression(expression)
+    }
+
+    private fun parseVoidExpression(): JsVoidExpression {
+        requireToken(TokenType.KEYWORD_VOID)
+        val expression = parseSingleExpression()
+        return JsVoidExpression(expression)
+    }
+
+    private fun parseTypeofExpression(): JsTypeofExpression {
+        requireToken(TokenType.KEYWORD_TYPEOF)
+        val expression = parseSingleExpression()
+        return JsTypeofExpression(expression)
+    }
+
+    private fun parsePreIncrementExpression(): JsPreIncrementExpression {
+        requireToken(TokenType.OPERATOR_INCREMENT)
+        val expression = parseSingleExpression()
+        return JsPreIncrementExpression(expression)
+    }
+
+    private fun parsePreDecreaseExpression(): JsPreDecreaseExpression {
+        requireToken(TokenType.OPERATOR_DECREMENT)
+        val expression = parseSingleExpression()
+        return JsPreDecreaseExpression(expression)
+    }
+
+    private fun parseUnaryPlusExpression(): JsUnaryPlusExpression {
+        requireToken(TokenType.OPERATOR_PLUS)
+        val expression = parseSingleExpression()
+        return JsUnaryPlusExpression(expression)
+    }
+
+    private fun parseUnaryMinusExpression(): JsUnaryMinusExpression {
+        requireToken(TokenType.OPERATOR_MINUS)
+        val expression = parseSingleExpression()
+        return JsUnaryMinusExpression(expression)
+    }
+
+    private fun parseBitNotExpression(): JsBitNotExpression {
+        requireToken(TokenType.OPERATOR_BIT_NOT)
+        val expression = parseSingleExpression()
+        return JsBitNotExpression(expression)
+    }
+
+    private fun parseNotExpression(): JsNotExpression {
+        requireToken(TokenType.OPERATOR_NOT)
+        val expression = parseSingleExpression()
+        return JsNotExpression(expression)
+    }
+
+    private fun parseThisExpression(): JsThisExpression {
+        requireToken(TokenType.KEYWORD_THIS)
+        return JsThisExpression()
+    }
+
+    private fun parseIdentifierExpression(): JsIdentifierExpression {
+        return JsIdentifierExpression(requireToken(TokenType.IDENTIFIER))
     }
 
     private fun parseArguments(): List<JsNode> {
