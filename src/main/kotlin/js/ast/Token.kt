@@ -1,4 +1,6 @@
-package core
+package js.ast
+
+import kotlin.String
 
 
 data class Token(val type: TokenType, val value: String)
@@ -165,4 +167,13 @@ enum class TokenType {
 
     // !
     OPERATOR_NOT,
+
+    // 关键字else
+    KEYWORD_ELSE,
+
+    // 关键字for
+    KEYWORD_FOR,
+
+    // 关键字do
+    KEYWORD_DO,
 }

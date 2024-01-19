@@ -1,14 +1,11 @@
-package core
+package js.ast
+
+import kotlin.String
 
 
-class CharStream {
-    private val text: String
+class CharStream(private val text: String) {
     private var position: Int = 0
     private var markPosition: Int = 0
-
-    constructor(text: String) {
-        this.text = text
-    }
 
     fun nextChar():Char? {
         if (position >= text.length) {
@@ -17,6 +14,9 @@ class CharStream {
         return text[position++]
     }
 
+    /**
+     * 回退到前一个字符
+     */
     fun seekBack() {
         if (position < text.length) {
             position--

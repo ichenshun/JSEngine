@@ -1,4 +1,4 @@
-package core
+package js.ast
 
 import isOpcode
 import isStringLeader

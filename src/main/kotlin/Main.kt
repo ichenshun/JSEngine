@@ -1,6 +1,6 @@
-import core.CharStream
-import core.Parser
-import core.Lexer
+import js.ast.CharStream
+import js.ast.Parser
+import js.ast.Lexer
 import java.io.File
 
 fun main(args: Array<String>) {

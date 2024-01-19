@@ -1,4 +1,4 @@
-package core
+package js.ast
 
 /**
  *  解析器
@@ -6,20 +6,20 @@ package core
  *  参考antlr4的JavaScript语法定义
  */
 class Parser(private val lexer: Lexer) {
-    fun parse(): JsNode {
+    fun parse(): Node {
         return parseProgram()
     }
 
     // 定义一个函数，解析JavaScript语法树
-    private fun parseProgram(): JsNode {
-        val elements = mutableListOf<JsSourceElement>()
+    private fun parseProgram(): Node {
+        val elements = mutableListOf<SourceElement>()
         while (lexer.currentToken.type != TokenType.EOF) {
             elements.add(parseSourceElement())
         }
-        return JsProgram(elements)
+        return Program(elements)
     }
 
-    private fun parseSourceElement(): JsSourceElement {
+    private fun parseSourceElement(): SourceElement {
         return if (lexer.currentToken.type == TokenType.KEYWORD_FUNCTION) {
             parseFunctionDeclaration()
         } else {
@@ -27,7 +27,7 @@ class Parser(private val lexer: Lexer) {
         }
     }
 
-    private fun parseFunctionDeclaration(): JsFunctionDeclaration {
+    private fun parseFunctionDeclaration(): FunctionDeclaration {
         // 解析函数名
         requireToken(TokenType.KEYWORD_FUNCTION)
         val functionName = requireToken(TokenType.IDENTIFIER)
@@ -42,7 +42,7 @@ class Parser(private val lexer: Lexer) {
         val body = parseFunctionBody()
         requireToken(TokenType.CLOSE_BRACE)
 
-        return JsFunctionDeclaration(functionName, parameters, body)
+        return FunctionDeclaration(functionName, parameters, body)
     }
 
     private fun parseFormalParameterList(): List<Token> {
@@ -55,65 +55,126 @@ class Parser(private val lexer: Lexer) {
         return parameters
     }
 
-    private fun parseFunctionBody(): List<JsSourceElement> {
-        val sourceElements = mutableListOf<JsSourceElement>()
+    private fun parseFunctionBody(): List<SourceElement> {
+        val sourceElements = mutableListOf<SourceElement>()
         while (lexer.currentToken.type != TokenType.CLOSE_BRACE) {
             sourceElements.add(parseSourceElement())
         }
         return sourceElements
     }
 
-    private fun parseBlockStatement(): JsBlock {
+    private fun parseStatement(): Statement {
+        return when (lexer.currentToken.type) {
+            TokenType.OPEN_BRACE -> parseBlockStatement()
+            TokenType.KEYWORD_VAR -> parseVariableStatement()
+            TokenType.SEMICOLON -> EmptyStatement(lexer.currentToken)
+            TokenType.KEYWORD_IF -> parseIfStatement()
+            TokenType.KEYWORD_DO -> parseDoStatement()
+            TokenType.KEYWORD_WHILE -> parseWhileStatement()
+            TokenType.KEYWORD_FOR -> parseForStatement()
+            TokenType.KEYWORD_RETURN -> parseReturnStatement()
+            TokenType.IDENTIFIER -> parseExpressionStatement()
+            else -> {
+                if (lexer.currentToken.type != TokenType.OPEN_BRACE) {
+                    parseExpressionStatement()
+                } else {
+                    throw IllegalStateException("Unexpected token ${lexer.currentToken}")
+                }
+            }
+        }
+    }
+
+    private fun parseDoStatement(): DoStatement {
+        requireToken(TokenType.KEYWORD_DO)
+        val statement = parseStatement()
+        requireToken(TokenType.KEYWORD_WHILE)
+        requireToken(TokenType.OPEN_PAREN)
+        val condition = parseExpressionStatement()
+        requireToken(TokenType.CLOSE_PAREN)
+        return DoStatement(statement, condition)
+    }
+
+    private fun parseWhileStatement(): WhileStatement {
+        requireToken(TokenType.KEYWORD_WHILE)
+        requireToken(TokenType.OPEN_PAREN)
+        val condition = parseExpressionStatement()
+        requireToken(TokenType.CLOSE_PAREN)
+        val statement = parseStatement()
+        return WhileStatement(condition, statement)
+    }
+
+    private fun parseForStatement(): ForStatement {
+        requireToken(TokenType.KEYWORD_FOR)
+        requireToken(TokenType.OPEN_PAREN)
+
+        val initializer = parseExpressionSequence()
+        requireToken(TokenType.SEMICOLON)
+        val condition = parseExpressionSequence()
+        requireToken(TokenType.SEMICOLON)
+        val increment = parseExpressionSequence()
+        requireToken(TokenType.CLOSE_PAREN)
+        val statement = parseStatement()
+        return ForStatement(initializer, condition, increment, statement)
+    }
+
+    private fun parseBlockStatement(): Block {
         requireToken(TokenType.OPEN_BRACE)
-        val statements = mutableListOf<JsStatement>()
+        val statements = mutableListOf<Statement>()
         while (lexer.currentToken.type != TokenType.CLOSE_BRACE) {
             statements.add(parseStatement())
         }
         requireToken(TokenType.CLOSE_BRACE)
-        return JsBlock(statements)
+        return Block(statements)
     }
 
-    private fun parseExpressionStatement(): JsExpressionStatement {
-        return JsExpressionStatement(parseExpressionSequence())
+    private fun parseExpressionStatement(): ExpressionStatement {
+        return ExpressionStatement(parseExpressionSequence())
     }
 
-    private fun parseIfStatement(): JsStatement {
+    private fun parseIfStatement(): Statement {
+        requireToken(TokenType.KEYWORD_IF)
+        requireToken(TokenType.OPEN_PAREN)
+        val condition = ExpressionStatement(parseExpressionSequence())
+        requireToken(TokenType.CLOSE_PAREN)
+        val trueStatement = parseStatement()
+        var falseStatement: Statement? = null
+        if (lexer.currentToken.type == TokenType.KEYWORD_ELSE) {
+            requireToken(TokenType.KEYWORD_ELSE)
+            falseStatement = parseStatement()
+        }
+        return IfStatement(condition, trueStatement, falseStatement)
+    }
+
+    private fun parseReturnStatement(): Statement {
         TODO("Not yet implemented")
     }
 
-    private fun parseWhileStatement(): JsStatement {
-        TODO("Not yet implemented")
-    }
 
-    private fun parseReturnStatement(): JsStatement {
-        TODO("Not yet implemented")
-    }
-
-
-    private fun parseVariableStatement(): JsStatement {
+    private fun parseVariableStatement(): Statement {
         requireToken(TokenType.KEYWORD_VAR)
-        val variableDeclarations  = mutableListOf<JsVariableDeclaration>()
+        val variableDeclarations  = mutableListOf<VariableDeclaration>()
         variableDeclarations.add(parseVariableDeclaration())
         while (lexer.currentToken.type != TokenType.EOF
             && lexer.currentToken.type != TokenType.SEMICOLON
-            && lexer.currentToken.type != TokenType.CLOSE_BRACE) {
+            && lexer.currentToken.type != TokenType.CLOSE_BRACE
+        ) {
             requireToken(TokenType.COMMA)
             variableDeclarations.add(parseVariableDeclaration())
         }
-        return JsVariableStatement(variableDeclarations)
+        return VariableStatement(variableDeclarations)
     }
 
-    private fun parseVariableDeclaration(): JsVariableDeclaration {
+    private fun parseVariableDeclaration(): VariableDeclaration {
         val variableName = requireToken(TokenType.IDENTIFIER)
-        var initializer: JsSingleExpression? = null
+        var initializer: SingleExpression? = null
         if (lexer.currentToken.type == TokenType.EQUAL) {
             eatToken(TokenType.EQUAL)
             initializer = parseSingleExpression()
         }
-        return JsVariableDeclaration(variableName, initializer)
+        return VariableDeclaration(variableName, initializer)
     }
 
-    private fun parseSingleExpression(): JsSingleExpression {
+    private fun parseSingleExpression(): SingleExpression {
         when (lexer.currentToken.type) {
             TokenType.KEYWORD_FUNCTION -> return parseFunctionExpression()
             TokenType.KEYWORD_NEW -> return parseNewExpression()
@@ -140,45 +201,45 @@ class Parser(private val lexer: Lexer) {
         }
     }
 
-    private fun parseObjectLiteralExpression(): JsSingleExpression {
+    private fun parseObjectLiteralExpression(): SingleExpression {
         TODO("Not yet implemented")
     }
 
-    private fun parseArrayLiteralExpression(): JsSingleExpression {
+    private fun parseArrayLiteralExpression(): SingleExpression {
         TODO("Not yet implemented")
     }
 
-    private fun parseRegularExpressionLiteralExpression(): JsRegExpLiteral {
+    private fun parseRegularExpressionLiteralExpression(): RegExpLiteral {
         TODO("Not yet implemented")
     }
 
-    private fun parseNumericLiteralExpression(): JsNumericLiteralExpression {
+    private fun parseNumericLiteralExpression(): NumericLiteralExpression {
         TODO("Not yet implemented")
     }
 
-    private fun parseStringLiteralExpression(): JsStringLiteralExpression {
+    private fun parseStringLiteralExpression(): StringLiteralExpression {
         val token = requireToken(TokenType.STRING_LITERAL)
-        return JsStringLiteralExpression(token.value)
+        return StringLiteralExpression(token.value)
     }
 
-    private fun parseBooleanLiteralExpression(): JsBooleanLiteralExpression {
+    private fun parseBooleanLiteralExpression(): BooleanLiteralExpression {
         requireToken(TokenType.BOOLEAN_LITERAL)
-        return JsBooleanLiteralExpression(lexer.currentToken.value == "true")
+        return BooleanLiteralExpression(lexer.currentToken.value == "true")
     }
 
-    private fun parseNullLiteralExpression(): JsNullLiteral {
+    private fun parseNullLiteralExpression(): NullLiteral {
         requireToken(TokenType.NULL_LITERAL)
-        return JsNullLiteral()
+        return NullLiteral()
     }
 
-    private fun parseParenthesizedExpression(): JsParenthesizedExpression {
+    private fun parseParenthesizedExpression(): ParenthesizedExpression {
         requireToken(TokenType.OPEN_PAREN)
-        val expressions = parseExpressionSequence()
+        val expressionSequence = parseExpressionSequence()
         requireToken(TokenType.CLOSE_PAREN)
-        return JsParenthesizedExpression(parseExpressionSequence())
+        return ParenthesizedExpression(expressionSequence)
     }
 
-    private fun parseFunctionExpression(): JsFunctionExpression {
+    private fun parseFunctionExpression(): FunctionExpression {
         requireToken(TokenType.KEYWORD_FUNCTION)
         var functionName: Token? = null
         if (lexer.currentToken.type == TokenType.IDENTIFIER) {
@@ -195,103 +256,90 @@ class Parser(private val lexer: Lexer) {
         val body = parseFunctionBody()
         requireToken(TokenType.CLOSE_BRACE)
 
-        return JsFunctionExpression(functionName, parameters, body)
+        return FunctionExpression(functionName, parameters, body)
     }
 
-    private fun parseNewExpression(): JsNewExpression {
+    private fun parseNewExpression(): NewExpression {
         requireToken(TokenType.KEYWORD_NEW)
         val expression = parseSingleExpression()
         val arguments = parseArguments()
-        return JsNewExpression(expression, arguments)
+        return NewExpression(expression, arguments)
     }
 
-    private fun parseDeleteExpression(): JsDeleteExpression {
+    private fun parseDeleteExpression(): DeleteExpression {
         requireToken(TokenType.KEYWORD_DELETE)
         val expression = parseSingleExpression()
-        return JsDeleteExpression(expression)
+        return DeleteExpression(expression)
     }
 
-    private fun parseVoidExpression(): JsVoidExpression {
+    private fun parseVoidExpression(): VoidExpression {
         requireToken(TokenType.KEYWORD_VOID)
         val expression = parseSingleExpression()
-        return JsVoidExpression(expression)
+        return VoidExpression(expression)
     }
 
-    private fun parseTypeofExpression(): JsTypeofExpression {
+    private fun parseTypeofExpression(): TypeofExpression {
         requireToken(TokenType.KEYWORD_TYPEOF)
         val expression = parseSingleExpression()
-        return JsTypeofExpression(expression)
+        return TypeofExpression(expression)
     }
 
-    private fun parsePreIncrementExpression(): JsPreIncrementExpression {
+    private fun parsePreIncrementExpression(): PreIncrementExpression {
         requireToken(TokenType.OPERATOR_INCREMENT)
         val expression = parseSingleExpression()
-        return JsPreIncrementExpression(expression)
+        return PreIncrementExpression(expression)
     }
 
-    private fun parsePreDecreaseExpression(): JsPreDecreaseExpression {
+    private fun parsePreDecreaseExpression(): PreDecreaseExpression {
         requireToken(TokenType.OPERATOR_DECREMENT)
         val expression = parseSingleExpression()
-        return JsPreDecreaseExpression(expression)
+        return PreDecreaseExpression(expression)
     }
 
-    private fun parseUnaryPlusExpression(): JsUnaryPlusExpression {
+    private fun parseUnaryPlusExpression(): UnaryPlusExpression {
         requireToken(TokenType.OPERATOR_PLUS)
         val expression = parseSingleExpression()
-        return JsUnaryPlusExpression(expression)
+        return UnaryPlusExpression(expression)
     }
 
-    private fun parseUnaryMinusExpression(): JsUnaryMinusExpression {
+    private fun parseUnaryMinusExpression(): UnaryMinusExpression {
         requireToken(TokenType.OPERATOR_MINUS)
         val expression = parseSingleExpression()
-        return JsUnaryMinusExpression(expression)
+        return UnaryMinusExpression(expression)
     }
 
-    private fun parseBitNotExpression(): JsBitNotExpression {
+    private fun parseBitNotExpression(): BitNotExpression {
         requireToken(TokenType.OPERATOR_BIT_NOT)
         val expression = parseSingleExpression()
-        return JsBitNotExpression(expression)
+        return BitNotExpression(expression)
     }
 
-    private fun parseNotExpression(): JsNotExpression {
+    private fun parseNotExpression(): NotExpression {
         requireToken(TokenType.OPERATOR_NOT)
         val expression = parseSingleExpression()
-        return JsNotExpression(expression)
+        return NotExpression(expression)
     }
 
-    private fun parseThisExpression(): JsThisExpression {
+    private fun parseThisExpression(): ThisExpression {
         requireToken(TokenType.KEYWORD_THIS)
-        return JsThisExpression()
+        return ThisExpression()
     }
 
-    private fun parseIdentifierExpression(): JsIdentifierExpression {
-        return JsIdentifierExpression(requireToken(TokenType.IDENTIFIER))
+    private fun parseIdentifierExpression(): IdentifierExpression {
+        return IdentifierExpression(requireToken(TokenType.IDENTIFIER))
     }
 
-    private fun parseArguments(): List<JsNode> {
+    private fun parseArguments(): List<Node> {
         TODO("Not yet implemented")
     }
 
-    private fun parseExpressionSequence(): List<JsSingleExpression> {
-        val expressions = mutableListOf<JsSingleExpression>()
+    private fun parseExpressionSequence(): ExpressionSequence {
+        val expressions = mutableListOf<SingleExpression>()
         expressions.add(parseSingleExpression())
         while (lexer.currentToken.type == TokenType.COMMA) {
             expressions.add(parseSingleExpression())
         }
-        return expressions
-    }
-
-    private fun parseStatement(): JsStatement {
-        return when (lexer.currentToken.type) {
-            TokenType.OPEN_BRACE -> parseBlockStatement()
-            TokenType.KEYWORD_VAR -> parseVariableStatement()
-            TokenType.SEMICOLON -> JsEmptyStatement(lexer.currentToken)
-            TokenType.KEYWORD_IF -> parseIfStatement()
-            TokenType.KEYWORD_WHILE -> parseWhileStatement()
-            TokenType.KEYWORD_RETURN -> parseReturnStatement()
-            TokenType.IDENTIFIER -> parseExpressionStatement()
-            else -> throw IllegalStateException("Unexpected token ${lexer.currentToken}")
-        }
+        return ExpressionSequence(expressions)
     }
 
     private fun eatToken(tokenType: TokenType) {
