@@ -7,18 +7,20 @@ import kotlin.String
 sealed class Node
 
 data class Program(
-    val elements: List<SourceElement>
+    val statements: List<Statement>
 ) : Node()
 
-open class SourceElement : Node()
+open class Statement: Node()
 
 data class FunctionDeclaration(
     val functionName: Token,
     val parameters: List<Token>,
-    val body: List<SourceElement>
-) : SourceElement()
+    val body: FunctionBody
+) : Statement()
 
-open class Statement: SourceElement()
+data class FunctionBody(
+    val statements: List<Statement>
+): Node()
 
 data class EmptyStatement(
     val token: Token
@@ -29,12 +31,16 @@ data class Block(
 ) : Statement()
 
 data class VariableStatement(
-    val variableDeclaration: List<VariableDeclaration>
+    val variableDeclarationList: VariableDeclarationList
 ) : Statement()
 
 data class VariableDeclaration(
     val variableName: Token,
     val initializer: Node?
+) : Statement()
+
+data class VariableDeclarationList(
+    val variableDeclaration: List<VariableDeclaration>
 ) : Statement()
 
 data class IfStatement(
@@ -43,22 +49,44 @@ data class IfStatement(
     val falseStatement: Statement?
 ) : Statement()
 
+open class IterationStatement() : Statement()
+
 data class DoStatement(
     val statement: Statement,
     val condition: ExpressionStatement
-) : Statement()
+) : IterationStatement()
 
 data class WhileStatement(
     val condition: ExpressionStatement,
     val statement: Statement
-) : Statement()
+) : IterationStatement()
 
 data class ForStatement(
-    val initializer: ExpressionSequence?,
+    val initializer: Node?, // maybe ExpressionSequence or VariableDeclarationList
     val condition: ExpressionSequence?,
     val incrementer: ExpressionSequence?,
     val statement: Statement
-): Statement()
+): IterationStatement()
+
+data class ForVarStatement(
+    val variableDeclaration: VariableDeclaration,
+    val condition: ExpressionSequence?,
+    val incrementer: ExpressionSequence?,
+    val statement: Statement
+) : IterationStatement()
+
+data class ForInStatement(
+    val singleExpressionOrVariableDeclarationList: Node,
+    val expressionSequence: ExpressionSequence,
+    val statement: Statement
+) : IterationStatement()
+
+data class ForOfStatement(
+    val await: Boolean, // default is false
+    val singleExpressionOrVariableDeclarationList: Node,
+    val expressionSequence: ExpressionSequence,
+    val statement: Statement
+) : IterationStatement()
 
 data class ExpressionStatement(
     val expressionSequence: ExpressionSequence
@@ -68,12 +96,25 @@ open class SingleExpression : Node()
 
 data class ExpressionSequence(
     val expressions: List<SingleExpression>
-) : SingleExpression()
+) : SingleExpression() {
+
+    fun isSingleExpression(): Boolean {
+        return expressions.size == 1
+    }
+
+    fun asSingleExpression(): SingleExpression {
+        if  (isSingleExpression()) {
+            return  expressions[0]
+        } else {
+            throw IllegalStateException("ExpressionSequence is not a single expression")
+        }
+    }
+}
 
 data class FunctionExpression(
     val name: Token?,
     val parameters: List<Token>,
-    val body: List<SourceElement>
+    val body: FunctionBody
 ) : SingleExpression()
 
 data class NewExpression(
@@ -188,7 +229,7 @@ data class While(val condition: Node, val body: Node) : Node()
 
 data class Return(val value: Node?) : Node()
 data class String(val value: String) : Node()
-data class Boolean(val value: Boolean) : Node()
+//data class Boolean(val value: Boolean) : Node()
 data class Null(val value:Any?=null) : Node()
 data class Undefined(val value:Any?=null) : Node()
 data class Array(val elements: List<Node>) : Node()

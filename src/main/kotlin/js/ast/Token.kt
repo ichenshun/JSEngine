@@ -57,18 +57,6 @@ enum class TokenType {
     // 赋值
     ASSIGN,
 
-    // 加号
-    PLUS,
-
-    // 减号
-    MINUS,
-
-    // 乘号
-    MULTIPLY,
-
-    // 除号
-    DIVIDE,
-
     // 等号
     EQUAL,
 
@@ -176,4 +164,14 @@ enum class TokenType {
 
     // 关键字do
     KEYWORD_DO,
+
+    // 关键字in
+    KEYWORD_IN,
+    KEYWORD_CLASS,
+    KEYWORD_AWAIT,
+    KEYWORD_IMPORT,
+    KEYWORD_YIELD,
+    KEYWORD_SUPER,
+    KEYWORD_ASYNC,
+    KEYWORD_OF,
 }

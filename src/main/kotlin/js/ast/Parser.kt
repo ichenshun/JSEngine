@@ -2,8 +2,10 @@ package js.ast
 
 /**
  *  解析器
- *  https://github.com/antlr/grammars-v4/blob/master/javascript/ecmascript/JavaScript/ECMAScript.g4
+ *
  *  参考antlr4的JavaScript语法定义
+ *  https://github.com/antlr/grammars-v4/blob/master/javascript/javascript/JavaScriptLexer.g4
+ *  https://github.com/antlr/grammars-v4/blob/master/javascript/javascript/JavaScriptParser.g4
  */
 class Parser(private val lexer: Lexer) {
     fun parse(): Node {
@@ -12,19 +14,70 @@ class Parser(private val lexer: Lexer) {
 
     // 定义一个函数，解析JavaScript语法树
     private fun parseProgram(): Node {
-        val elements = mutableListOf<SourceElement>()
+        val statements = mutableListOf<Statement>()
         while (lexer.currentToken.type != TokenType.EOF) {
-            elements.add(parseSourceElement())
+            statements.add(parseStatement())
         }
-        return Program(elements)
+        return Program(statements)
     }
 
-    private fun parseSourceElement(): SourceElement {
-        return if (lexer.currentToken.type == TokenType.KEYWORD_FUNCTION) {
-            parseFunctionDeclaration()
-        } else {
-            parseStatement()
+    private fun parseStatement(): Statement {
+        return when (lexer.currentToken.type) {
+            TokenType.OPEN_BRACE -> parseBlockStatement()
+            TokenType.KEYWORD_VAR -> parseVariableStatement()
+            TokenType.SEMICOLON -> EmptyStatement(lexer.currentToken)
+            TokenType.KEYWORD_FUNCTION -> parseFunctionDeclaration()
+            TokenType.KEYWORD_IF -> parseIfStatement()
+            TokenType.KEYWORD_DO -> parseDoStatement()
+            TokenType.KEYWORD_WHILE -> parseWhileStatement()
+            TokenType.KEYWORD_FOR -> parseForIterationStatement()
+            TokenType.KEYWORD_RETURN -> parseReturnStatement()
+            else -> {
+                if (lexer.currentToken.type != TokenType.OPEN_BRACE) {
+                    parseExpressionStatement()
+                } else {
+                    throw IllegalStateException("Unexpected token ${lexer.currentToken}")
+                }
+            }
         }
+    }
+
+    private fun parseBlockStatement(): Block {
+        requireToken(TokenType.OPEN_BRACE)
+        val statements = mutableListOf<Statement>()
+        while (lexer.currentToken.type != TokenType.CLOSE_BRACE) {
+            statements.add(parseStatement())
+        }
+        requireToken(TokenType.CLOSE_BRACE)
+        return Block(statements)
+    }
+
+    private fun parseVariableStatement(): VariableStatement {
+        requireToken(TokenType.KEYWORD_VAR)
+        return VariableStatement(parseVariableDeclarationList())
+    }
+
+    private fun parseVariableDeclarationList(): VariableDeclarationList {
+        val variableDeclarations  = mutableListOf<VariableDeclaration>()
+        variableDeclarations.add(parseVariableDeclaration())
+        while (lexer.currentToken.type != TokenType.EOF
+            && lexer.currentToken.type != TokenType.SEMICOLON
+            && lexer.currentToken.type != TokenType.CLOSE_BRACE
+        ) {
+            requireToken(TokenType.COMMA)
+            variableDeclarations.add(parseVariableDeclaration())
+        }
+        return VariableDeclarationList(variableDeclarations)
+    }
+
+    private fun parseVariableDeclaration(): VariableDeclaration {
+        val variableName = requireToken(TokenType.IDENTIFIER)
+        var initializer: SingleExpression? = null
+        if (lexer.currentToken.type == TokenType.EQUAL) {
+            eatToken(TokenType.EQUAL)
+            initializer = parseSingleExpression()
+        }
+        return VariableDeclaration(variableName, initializer)
     }
 
     private fun parseFunctionDeclaration(): FunctionDeclaration {
@@ -37,10 +90,7 @@ class Parser(private val lexer: Lexer) {
         val parameters = parseFormalParameterList()
         requireToken(TokenType.CLOSE_PAREN)
 
-        // 解析函数体
-        requireToken(TokenType.OPEN_BRACE)
         val body = parseFunctionBody()
-        requireToken(TokenType.CLOSE_BRACE)
 
         return FunctionDeclaration(functionName, parameters, body)
     }
@@ -55,33 +105,15 @@ class Parser(private val lexer: Lexer) {
         return parameters
     }
 
-    private fun parseFunctionBody(): List<SourceElement> {
-        val sourceElements = mutableListOf<SourceElement>()
+    private fun parseFunctionBody(): FunctionBody {
+        // 解析函数体
+        requireToken(TokenType.OPEN_BRACE)
+        val statements = mutableListOf<Statement>()
         while (lexer.currentToken.type != TokenType.CLOSE_BRACE) {
-            sourceElements.add(parseSourceElement())
+            statements.add(parseStatement())
         }
-        return sourceElements
-    }
-
-    private fun parseStatement(): Statement {
-        return when (lexer.currentToken.type) {
-            TokenType.OPEN_BRACE -> parseBlockStatement()
-            TokenType.KEYWORD_VAR -> parseVariableStatement()
-            TokenType.SEMICOLON -> EmptyStatement(lexer.currentToken)
-            TokenType.KEYWORD_IF -> parseIfStatement()
-            TokenType.KEYWORD_DO -> parseDoStatement()
-            TokenType.KEYWORD_WHILE -> parseWhileStatement()
-            TokenType.KEYWORD_FOR -> parseForStatement()
-            TokenType.KEYWORD_RETURN -> parseReturnStatement()
-            TokenType.IDENTIFIER -> parseExpressionStatement()
-            else -> {
-                if (lexer.currentToken.type != TokenType.OPEN_BRACE) {
-                    parseExpressionStatement()
-                } else {
-                    throw IllegalStateException("Unexpected token ${lexer.currentToken}")
-                }
-            }
-        }
+        requireToken(TokenType.CLOSE_BRACE)
+        return FunctionBody(statements)
     }
 
     private fun parseDoStatement(): DoStatement {
@@ -103,28 +135,94 @@ class Parser(private val lexer: Lexer) {
         return WhileStatement(condition, statement)
     }
 
-    private fun parseForStatement(): ForStatement {
+    private fun parseForIterationStatement(): IterationStatement {
         requireToken(TokenType.KEYWORD_FOR)
+        // 解析是否有await关键字
+        val await = lexer.currentToken.type == TokenType.KEYWORD_AWAIT
+        if (await) {
+            lexer.nextToken()
+        }
         requireToken(TokenType.OPEN_PAREN)
 
-        val initializer = parseExpressionSequence()
-        requireToken(TokenType.SEMICOLON)
-        val condition = parseExpressionSequence()
-        requireToken(TokenType.SEMICOLON)
-        val increment = parseExpressionSequence()
-        requireToken(TokenType.CLOSE_PAREN)
+        var expressionSequence: ExpressionSequence? = null
+        var variableDeclarationList: VariableDeclarationList? = null
+        if (isExpressionLeaderToken(lexer.currentToken.type)) {
+            expressionSequence = parseExpressionSequence()
+        } else if (lexer.currentToken.type == TokenType.KEYWORD_VAR) {
+            variableDeclarationList = parseVariableDeclarationList()
+        }
+
+        if (lexer.currentToken.type == TokenType.SEMICOLON) {
+            if (await) {
+                throw IllegalStateException("Unexpected 'await' keyword before ';'")
+            }
+            return parseForStatement(expressionSequence ?: variableDeclarationList)
+        } else {
+            if (expressionSequence == null && variableDeclarationList == null) {
+                throw IllegalStateException("For-in/of statement requires a single expression or variable declaration list")
+            }
+            if (expressionSequence != null && !expressionSequence.isSingleExpression()) {
+                throw IllegalStateException("For-in/of statement requires a single expression")
+            }
+            if (lexer.currentToken.type == TokenType.KEYWORD_IN) {
+                if (await) {
+                    throw IllegalStateException("Unexpected 'await' keyword before keyword 'in'")
+                }
+                if (expressionSequence != null) {
+                    return parseForInStatement(expressionSequence.asSingleExpression())
+                } else if (variableDeclarationList != null) {
+                    return parseForInStatement(variableDeclarationList)
+                } else {
+                    throw IllegalStateException("For-in/of statement requires a single expression or variable declaration list")
+                }
+            } else if (lexer.currentToken.type == TokenType.KEYWORD_OF) {
+                if (expressionSequence != null) {
+                    return parseForOfStatement(await, expressionSequence.asSingleExpression())
+                } else if (variableDeclarationList != null) {
+                    return parseForOfStatement(await, variableDeclarationList)
+                } else {
+                    throw IllegalStateException("For-in/of statement requires a single expression or variable declaration list")
+                }
+            } else {
+                throw IllegalStateException("For-in/of statement requires 'in' or 'of' keyword")
+            }
+        }
+    }
+
+    private fun parseForStatement(initializer: Node?): ForStatement {
+        var condition: ExpressionSequence? = null
+        if (lexer.currentToken.type == TokenType.SEMICOLON) {
+            lexer.nextToken()
+        } else {
+            condition = parseExpressionSequence()
+            requireToken(TokenType.SEMICOLON)
+        }
+
+        var increment: ExpressionSequence? = null
+        if (lexer.currentToken.type == TokenType.CLOSE_PAREN) {
+            lexer.nextToken()
+        } else {
+            increment = parseExpressionSequence()
+            requireToken(TokenType.CLOSE_PAREN)
+        }
         val statement = parseStatement()
         return ForStatement(initializer, condition, increment, statement)
     }
 
-    private fun parseBlockStatement(): Block {
-        requireToken(TokenType.OPEN_BRACE)
-        val statements = mutableListOf<Statement>()
-        while (lexer.currentToken.type != TokenType.CLOSE_BRACE) {
-            statements.add(parseStatement())
-        }
-        requireToken(TokenType.CLOSE_BRACE)
-        return Block(statements)
+    private fun parseForInStatement(singleExpressionOrVariableDeclarationList: Node): ForInStatement {
+        requireToken(TokenType.KEYWORD_IN)
+        val expressionSequence = parseExpressionSequence()
+        requireToken(TokenType.CLOSE_PAREN)
+        val statement = parseStatement()
+        return ForInStatement(singleExpressionOrVariableDeclarationList, expressionSequence, statement)
+    }
+
+    private fun parseForOfStatement(await: Boolean, singleExpressionOrVariableDeclarationList: Node): ForOfStatement {
+        requireToken(TokenType.KEYWORD_IN)
+        val expressionSequence = parseExpressionSequence()
+        requireToken(TokenType.CLOSE_PAREN)
+        val statement = parseStatement()
+        return ForOfStatement(false, singleExpressionOrVariableDeclarationList, expressionSequence, statement)
     }
 
     private fun parseExpressionStatement(): ExpressionStatement {
@@ -147,31 +245,6 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseReturnStatement(): Statement {
         TODO("Not yet implemented")
-    }
-
-
-    private fun parseVariableStatement(): Statement {
-        requireToken(TokenType.KEYWORD_VAR)
-        val variableDeclarations  = mutableListOf<VariableDeclaration>()
-        variableDeclarations.add(parseVariableDeclaration())
-        while (lexer.currentToken.type != TokenType.EOF
-            && lexer.currentToken.type != TokenType.SEMICOLON
-            && lexer.currentToken.type != TokenType.CLOSE_BRACE
-        ) {
-            requireToken(TokenType.COMMA)
-            variableDeclarations.add(parseVariableDeclaration())
-        }
-        return VariableStatement(variableDeclarations)
-    }
-
-    private fun parseVariableDeclaration(): VariableDeclaration {
-        val variableName = requireToken(TokenType.IDENTIFIER)
-        var initializer: SingleExpression? = null
-        if (lexer.currentToken.type == TokenType.EQUAL) {
-            eatToken(TokenType.EQUAL)
-            initializer = parseSingleExpression()
-        }
-        return VariableDeclaration(variableName, initializer)
     }
 
     private fun parseSingleExpression(): SingleExpression {
@@ -355,6 +428,34 @@ class Parser(private val lexer: Lexer) {
             return currentToken
         } else {
             throw IllegalStateException("Expected token type $tokenType but got ${lexer.currentToken.type}")
+        }
+    }
+
+    private fun isExpressionLeaderToken(tokenType: TokenType): Boolean {
+        when (tokenType) {
+            TokenType.KEYWORD_ASYNC,
+            TokenType.KEYWORD_FUNCTION,
+            TokenType.KEYWORD_CLASS,
+            TokenType.KEYWORD_DELETE,
+            TokenType.KEYWORD_VOID,
+            TokenType.KEYWORD_TYPEOF,
+            TokenType.OPERATOR_INCREMENT,
+            TokenType.OPERATOR_DECREMENT,
+            TokenType.OPERATOR_PLUS,
+            TokenType.OPERATOR_MINUS,
+            TokenType.OPERATOR_BIT_NOT,
+            TokenType.OPERATOR_NOT,
+            TokenType.KEYWORD_AWAIT,
+            TokenType.KEYWORD_IMPORT,
+            TokenType.KEYWORD_YIELD,
+            TokenType.KEYWORD_THIS,
+            TokenType.IDENTIFIER,
+            TokenType.KEYWORD_SUPER,
+            TokenType.LITERAL,
+            TokenType.OPEN_BRACKET,
+            TokenType.OPEN_BRACE,
+            TokenType.OPEN_PAREN -> return true
+            else -> return false
         }
     }
 }
