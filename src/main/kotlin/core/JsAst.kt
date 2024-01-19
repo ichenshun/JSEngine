@@ -17,6 +17,10 @@ data class JsFunctionDeclaration(
 
 open class JsStatement: JsSourceElement()
 
+data class JsEmptyStatement(
+    val token: Token
+) : JsStatement()
+
 data class JsBlock(
     val statements: List<JsStatement>
 ) : JsStatement()
@@ -32,7 +36,7 @@ data class JsVariableDeclaration(
 
 data class JsExpressionStatement(
     val expression: List<JsSingleExpression>
-) : JsNode()
+) : JsStatement()
 
 open class JsSingleExpression : JsNode()
 
@@ -183,3 +187,4 @@ data class JsBinaryOperation(val operator: String, val left: JsNode, val right: 
 data class JsVariable(val name: String) : JsNode()
 data class JsAssignment(val variable: JsVariable, val value: JsNode) : JsNode()
 data class JsFunctionCall(val functionName: String, val arguments: List<JsNode>) : JsNode()
+

@@ -63,7 +63,7 @@ class Parser(private val lexer: Lexer) {
         return sourceElements
     }
 
-    private fun parseBlockStatement(): JsStatement {
+    private fun parseBlockStatement(): JsBlock {
         requireToken(TokenType.OPEN_BRACE)
         val statements = mutableListOf<JsStatement>()
         while (lexer.currentToken.type != TokenType.CLOSE_BRACE) {
@@ -71,6 +71,10 @@ class Parser(private val lexer: Lexer) {
         }
         requireToken(TokenType.CLOSE_BRACE)
         return JsBlock(statements)
+    }
+
+    private fun parseExpressionStatement(): JsExpressionStatement {
+        return JsExpressionStatement(parseExpressionSequence())
     }
 
     private fun parseIfStatement(): JsStatement {
@@ -85,9 +89,6 @@ class Parser(private val lexer: Lexer) {
         TODO("Not yet implemented")
     }
 
-    private fun parseExpressionStatement(): JsStatement {
-        TODO("Not yet implemented")
-    }
 
     private fun parseVariableStatement(): JsStatement {
         requireToken(TokenType.KEYWORD_VAR)
@@ -272,18 +273,24 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseExpressionSequence(): List<JsSingleExpression> {
-        TODO("Not yet implemented")
+        val expressions = mutableListOf<JsSingleExpression>()
+        expressions.add(parseSingleExpression())
+        while (lexer.currentToken.type == TokenType.COMMA) {
+            expressions.add(parseSingleExpression())
+        }
+        return expressions
     }
 
     private fun parseStatement(): JsStatement {
         return when (lexer.currentToken.type) {
             TokenType.OPEN_BRACE -> parseBlockStatement()
             TokenType.KEYWORD_VAR -> parseVariableStatement()
+            TokenType.SEMICOLON -> JsEmptyStatement(lexer.currentToken)
             TokenType.KEYWORD_IF -> parseIfStatement()
             TokenType.KEYWORD_WHILE -> parseWhileStatement()
             TokenType.KEYWORD_RETURN -> parseReturnStatement()
             TokenType.IDENTIFIER -> parseExpressionStatement()
-            else -> throw IllegalStateException("Unexpected token type ${lexer.currentToken.type}")
+            else -> throw IllegalStateException("Unexpected token ${lexer.currentToken}")
         }
     }
 
