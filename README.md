@@ -8,7 +8,7 @@
 ### 为什么用Kotlin？
 因为我用了很多年的Java，Java的板正的冗长语法，让我感觉快要窒息，我喜欢Kotlin带给我的自由感觉。
 
-### JavaScipt的语法定义
+### JavaScript的语法定义（这是受到ChatGpt给我生成的代码的启发，通过Google搜索到的）
 https://github.com/antlr/grammars-v4/blob/master/javascript/ecmascript/JavaScript/ECMAScript.g4
 
 ### 目前进展
