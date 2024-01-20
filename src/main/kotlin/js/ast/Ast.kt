@@ -109,11 +109,24 @@ data class ForOfStatement(
 
 data class DebuggerStatement(val token: Token) : Statement()
 
-data class ContinueStatement(val label: Token?) : Statement()
-data class BreakStatement(val label: Token?) : Statement()
-data class ReturnStatement(val expression: ExpressionSequence?) : Statement()
+data class ContinueStatement(
+    val continueToken: Token,
+    val label: Token?
+) : Statement()
+
+data class BreakStatement(
+    val breakToken: Token,
+    val label: Token? // identifier
+) : Statement()
+
+data class ReturnStatement(
+    val returnToken: Token,
+    val expression: ExpressionSequence?
+) : Statement()
+
 data class WithStatement(
-    val singleExpression: ExpressionStatement,
+    val withToken: Token,
+    val expressionSequence: ExpressionSequence,
     val statement: Statement
 ) : Statement()
 

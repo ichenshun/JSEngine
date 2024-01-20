@@ -162,19 +162,38 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseWithStatement(): WithStatement {
-        TODO("Not yet implemented")
+        val withToken = requireToken(TokenType.KEYWORD_WITH)
+        requireToken(TokenType.OPEN_PAREN)
+        val expression = parseExpressionSequence()
+        requireToken(TokenType.CLOSE_PAREN)
+        return WithStatement(withToken, expression, parseStatement())
     }
 
     private fun parseYieldStatement(): YieldStatement {
-        TODO("Not yet implemented")
+        val yieldToken = requireToken(TokenType.KEYWORD_YIELD)
+        var expressionSequence: ExpressionSequence? = null
+        if (isExpressionLeaderToken(lexer.currentToken.type)) {
+            expressionSequence = parseExpressionSequence()
+        }
+        return YieldStatement(yieldToken, expressionSequence)
     }
 
     private fun parseBreakStatement(): BreakStatement {
-        TODO("Not yet implemented")
+        val breakToken = requireToken(TokenType.KEYWORD_BREAK)
+        var label: Token? = null
+        if (lexer.currentToken.type == TokenType.IDENTIFIER) {
+            label = requireToken(TokenType.IDENTIFIER)
+        }
+        return BreakStatement(breakToken, label)
     }
 
     private fun parseContinueStatement(): ContinueStatement {
-        TODO("Not yet implemented")
+        val continueToken = requireToken(TokenType.KEYWORD_CONTINUE)
+        var label: Token? = null
+        if (lexer.currentToken.type == TokenType.IDENTIFIER) {
+            label = requireToken(TokenType.IDENTIFIER)
+        }
+        return ContinueStatement(continueToken, label)
     }
 
     private fun parseExportStatement(): ExportStatement {
@@ -389,7 +408,12 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseReturnStatement(): Statement {
-        TODO("Not yet implemented")
+        val returnToken = requireToken(TokenType.KEYWORD_RETURN)
+        var expressionSequence: ExpressionSequence? = null
+        if (isExpressionLeaderToken(lexer.currentToken.type)) {
+            expressionSequence = parseExpressionSequence()
+        }
+        return ReturnStatement(returnToken, expressionSequence)
     }
 
     private fun parseSingleExpression(): SingleExpression {
