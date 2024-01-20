@@ -187,4 +187,7 @@ enum class TokenType {
     KEYWORD_FINALLY,
     ARRAY_LITERAL,
     OBJECT_LITERAL,
+    COLON,
+    KEYWORD_CASE,
+    KEYWORD_DEFAULT,
 }

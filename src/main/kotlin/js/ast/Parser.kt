@@ -38,7 +38,7 @@ class Parser(private val lexer: Lexer) {
             TokenType.KEYWORD_YIELD -> parseYieldStatement()
             TokenType.KEYWORD_WITH -> parseWithStatement()
             TokenType.KEYWORD_SWITCH -> parseSwitchStatement()
-            TokenType.KEYWORD_LABELLED -> parseLabelledStatement()
+            TokenType.KEYWORD_LABELLED -> parseLabelledStatement() // 需要重新识别
             TokenType.KEYWORD_THROW -> parseThrowStatement()
             TokenType.KEYWORD_TRY -> parseTryStatement()
             TokenType.KEYWORD_DEBUGGER -> parseDebuggerStatement()
@@ -97,16 +97,68 @@ class Parser(private val lexer: Lexer) {
         }
     }
 
-    private fun parseThrowStatement(): ThrowStatement {
-        TODO("Not yet implemented")
+    private fun parseSwitchStatement(): SwitchStatement {
+        val switchToken = requireToken(TokenType.KEYWORD_SWITCH)
+        requireToken(TokenType.OPEN_PAREN)
+        val expressionSequence = parseExpressionSequence()
+        requireToken(TokenType.CLOSE_PAREN)
+        val caseBlock = parseCaseBlock()
+        return SwitchStatement(switchToken, expressionSequence, caseBlock)
+    }
+
+    private fun parseCaseBlock(): CaseBlock {
+        requireToken(TokenType.OPEN_BRACE)
+        var caseClauses: CaseClauses? =null
+        if (lexer.currentToken.type != TokenType.KEYWORD_CASE) {
+            caseClauses = parseCaseClauses()
+        }
+        var defaultClause: DefaultClause? = null
+        if (lexer.currentToken.type == TokenType.KEYWORD_DEFAULT) {
+            defaultClause = parseDefaultClause()
+        }
+
+        var caseClauses2: CaseClauses? =null
+        if (lexer.currentToken.type != TokenType.KEYWORD_CASE) {
+            caseClauses2 = parseCaseClauses()
+        }
+
+        requireToken(TokenType.CLOSE_BRACE)
+        return CaseBlock(caseClauses, defaultClause, caseClauses2)
+    }
+
+    private fun parseCaseClauses(): CaseClauses {
+        val caseClauses = mutableListOf<CaseClause>()
+        while (lexer.currentToken.type == TokenType.KEYWORD_CASE) {
+            caseClauses.add(parseCaseClause())
+        }
+        return CaseClauses(caseClauses)
+    }
+
+    private fun parseCaseClause(): CaseClause {
+        val caseToken = requireToken(TokenType.KEYWORD_CASE)
+        val expressionSequence = parseExpressionSequence()
+        requireToken(TokenType.COLON)
+        val statementList = parseStatementList()
+        return CaseClause(caseToken, expressionSequence, statementList)
+    }
+
+    private fun parseDefaultClause(): DefaultClause {
+        val defaultToken = requireToken(TokenType.KEYWORD_DEFAULT)
+        requireToken(TokenType.COLON)
+        val statementList = parseStatementList()
+        return DefaultClause(defaultToken, statementList)
     }
 
     private fun parseLabelledStatement(): LabelledStatement {
-        TODO("Not yet implemented")
+        val label = requireToken(TokenType.IDENTIFIER)
+        requireToken(TokenType.COLON)
+        return LabelledStatement(label, parseStatement())
     }
 
-    private fun parseSwitchStatement(): SwitchStatement {
-        TODO("Not yet implemented")
+    private fun parseThrowStatement(): ThrowStatement {
+        return ThrowStatement(
+            requireToken(TokenType.KEYWORD_THROW),
+            parseExpressionSequence())
     }
 
     private fun parseWithStatement(): WithStatement {
@@ -135,10 +187,7 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseBlock(): Block {
         requireToken(TokenType.OPEN_BRACE)
-        val statements = mutableListOf<Statement>()
-        while (lexer.currentToken.type != TokenType.CLOSE_BRACE) {
-            statements.add(parseStatement())
-        }
+        val statements = parseStatementList()
         requireToken(TokenType.CLOSE_BRACE)
         return Block(statements)
     }
@@ -199,12 +248,17 @@ class Parser(private val lexer: Lexer) {
     private fun parseFunctionBody(): FunctionBody {
         // 解析函数体
         requireToken(TokenType.OPEN_BRACE)
-        val statements = mutableListOf<Statement>()
-        while (lexer.currentToken.type != TokenType.CLOSE_BRACE) {
-            statements.add(parseStatement())
-        }
+        val statements = parseStatementList()
         requireToken(TokenType.CLOSE_BRACE)
         return FunctionBody(statements)
+    }
+
+    private fun parseStatementList(): StatementList {
+        val statements = mutableListOf<Statement>()
+        while (isStatementLeaderToken(lexer.currentToken.type)) {
+            statements.add(parseStatement())
+        }
+        return StatementList(statements)
     }
 
     private fun parseDoStatement(): DoStatement {
@@ -519,6 +573,33 @@ class Parser(private val lexer: Lexer) {
             return currentToken
         } else {
             throw IllegalStateException("Expected token type $tokenType but got ${lexer.currentToken.type}")
+        }
+    }
+
+    private fun isStatementLeaderToken(tokenType: TokenType): Boolean {
+        when (tokenType) {
+            TokenType.OPEN_BRACE,
+            TokenType.KEYWORD_VAR,
+            TokenType.KEYWORD_IMPORT,
+            TokenType.KEYWORD_EXPORT,
+            TokenType.SEMICOLON,
+            TokenType.KEYWORD_CLASS,
+            TokenType.KEYWORD_FUNCTION,
+            TokenType.KEYWORD_IF,
+            TokenType.KEYWORD_DO,
+            TokenType.KEYWORD_WHILE,
+            TokenType.KEYWORD_FOR,
+            TokenType.KEYWORD_CONTINUE,
+            TokenType.KEYWORD_BREAK,
+            TokenType.KEYWORD_RETURN,
+            TokenType.KEYWORD_YIELD,
+            TokenType.KEYWORD_WITH,
+            TokenType.IDENTIFIER,
+            TokenType.KEYWORD_SWITCH,
+            TokenType.KEYWORD_THROW,
+            TokenType.KEYWORD_TRY,
+            TokenType.KEYWORD_DEBUGGER -> return true
+            else -> return isExpressionLeaderToken(tokenType)
         }
     }
 
