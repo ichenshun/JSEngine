@@ -12,8 +12,7 @@ class Parser(private val lexer: Lexer) {
         return parseProgram()
     }
 
-    // 定义一个函数，解析JavaScript语法树
-    private fun parseProgram(): Node {
+    private fun parseProgram(): Program {
         val statements = mutableListOf<Statement>()
         while (lexer.currentToken.type != TokenType.EOF) {
             statements.add(parseStatement())
@@ -23,26 +22,118 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseStatement(): Statement {
         return when (lexer.currentToken.type) {
-            TokenType.OPEN_BRACE -> parseBlockStatement()
+            TokenType.OPEN_BRACE -> parseBlock()
             TokenType.KEYWORD_VAR -> parseVariableStatement()
-            TokenType.SEMICOLON -> EmptyStatement(lexer.currentToken)
+            TokenType.KEYWORD_IMPORT -> parseImportStatement()
+            TokenType.KEYWORD_EXPORT -> parseExportStatement()
+            TokenType.SEMICOLON -> parseEmptyStatement()
             TokenType.KEYWORD_FUNCTION -> parseFunctionDeclaration()
             TokenType.KEYWORD_IF -> parseIfStatement()
             TokenType.KEYWORD_DO -> parseDoStatement()
             TokenType.KEYWORD_WHILE -> parseWhileStatement()
             TokenType.KEYWORD_FOR -> parseForIterationStatement()
+            TokenType.KEYWORD_CONTINUE -> parseContinueStatement()
+            TokenType.KEYWORD_BREAK -> parseBreakStatement()
             TokenType.KEYWORD_RETURN -> parseReturnStatement()
-            else -> {
-                if (lexer.currentToken.type != TokenType.OPEN_BRACE) {
-                    parseExpressionStatement()
-                } else {
-                    throw IllegalStateException("Unexpected token ${lexer.currentToken}")
-                }
-            }
+            TokenType.KEYWORD_YIELD -> parseYieldStatement()
+            TokenType.KEYWORD_WITH -> parseWithStatement()
+            TokenType.KEYWORD_SWITCH -> parseSwitchStatement()
+            TokenType.KEYWORD_LABELLED -> parseLabelledStatement()
+            TokenType.KEYWORD_THROW -> parseThrowStatement()
+            TokenType.KEYWORD_TRY -> parseTryStatement()
+            TokenType.KEYWORD_DEBUGGER -> parseDebuggerStatement()
+            else -> parseExpressionStatement()
         }
     }
 
-    private fun parseBlockStatement(): Block {
+    private fun parseEmptyStatement(): EmptyStatement {
+        return EmptyStatement(requireToken(TokenType.SEMICOLON))
+    }
+
+    private fun parseDebuggerStatement(): DebuggerStatement {
+        return DebuggerStatement(requireToken(TokenType.KEYWORD_DEBUGGER))
+    }
+
+    private fun parseTryStatement(): TryStatement {
+        requireToken(TokenType.KEYWORD_TRY)
+        val tryBlock = parseBlock()
+        val catchProduction = if (lexer.currentToken.type == TokenType.KEYWORD_CATCH) {
+            parseCatchProduction()
+        } else {
+            null
+        }
+        val finallyProduction = if (lexer.currentToken.type == TokenType.KEYWORD_FINALLY) {
+            parseFinallyProduction()
+        } else {
+            null
+        }
+        return TryStatement(tryBlock, catchProduction, finallyProduction)
+    }
+
+    private fun parseFinallyProduction(): FinallyProduction {
+        return FinallyProduction(requireToken(TokenType.KEYWORD_FINALLY), parseBlock())
+    }
+
+    private fun parseCatchProduction(): CatchProduction {
+        val catchToken = requireToken(TokenType.KEYWORD_CATCH)
+        var catchAssignable: Assignable? = null
+        if (lexer.currentToken.type == TokenType.OPEN_PAREN) {
+            if (lexer.currentToken.type != TokenType.CLOSE_PAREN) {
+                catchAssignable = parseAssignable()
+            }
+        }
+        val catchBlock = parseBlock()
+        return CatchProduction(catchToken, catchAssignable, catchBlock)
+    }
+
+    private fun parseAssignable(): Assignable {
+        when (lexer.currentToken.type) {
+            TokenType.IDENTIFIER,
+            TokenType.ARRAY_LITERAL,
+            TokenType.OBJECT_LITERAL
+            -> return Assignable(lexer.currentToken)
+            else ->
+                throw IllegalStateException("Expected assignable, found ${lexer.currentToken}")
+        }
+    }
+
+    private fun parseThrowStatement(): ThrowStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseLabelledStatement(): LabelledStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseSwitchStatement(): SwitchStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseWithStatement(): WithStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseYieldStatement(): YieldStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseBreakStatement(): BreakStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseContinueStatement(): ContinueStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseExportStatement(): ExportStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseImportStatement(): ImportStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseBlock(): Block {
         requireToken(TokenType.OPEN_BRACE)
         val statements = mutableListOf<Statement>()
         while (lexer.currentToken.type != TokenType.CLOSE_BRACE) {

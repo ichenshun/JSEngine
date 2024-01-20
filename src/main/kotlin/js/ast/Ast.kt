@@ -12,6 +12,31 @@ data class Program(
 
 open class Statement: Node()
 
+data class Block(
+    val statements: List<Statement>
+) : Statement()
+
+data class ExportStatement(
+    val declaration: Node
+) : Statement()
+
+data class ImportStatement(
+    val moduleSpecifier: Token,
+    val namedImports: List<NamedImport>,
+    val defaultImport: DefaultImport?
+) : Statement()
+
+data class NamedImport(
+    val identifier: Token,
+    val isTypeOnly: Boolean
+) : Node()
+
+data class DefaultImport(
+    val identifier: Token,
+    val isTypeOnly: Boolean
+) : Node()
+
+
 data class FunctionDeclaration(
     val functionName: Token,
     val parameters: List<Token>,
@@ -26,9 +51,6 @@ data class EmptyStatement(
     val token: Token
 ) : Statement()
 
-data class Block(
-    val statements: List<Statement>
-) : Statement()
 
 data class VariableStatement(
     val variableDeclarationList: VariableDeclarationList
@@ -68,13 +90,6 @@ data class ForStatement(
     val statement: Statement
 ): IterationStatement()
 
-data class ForVarStatement(
-    val variableDeclaration: VariableDeclaration,
-    val condition: ExpressionSequence?,
-    val incrementer: ExpressionSequence?,
-    val statement: Statement
-) : IterationStatement()
-
 data class ForInStatement(
     val singleExpressionOrVariableDeclarationList: Node,
     val expressionSequence: ExpressionSequence,
@@ -87,6 +102,61 @@ data class ForOfStatement(
     val expressionSequence: ExpressionSequence,
     val statement: Statement
 ) : IterationStatement()
+
+data class DebuggerStatement(val token: Token) : Statement()
+
+data class ContinueStatement(val label: Token?) : Statement()
+data class BreakStatement(val label: Token?) : Statement()
+data class ReturnStatement(val expression: ExpressionSequence?) : Statement()
+data class WithStatement(
+    val singleExpression: ExpressionStatement,
+    val statement: Statement
+) : Statement()
+
+data class LabelledStatement(val label: String, val statement: Statement) : Statement()
+data class ThrowStatement(val expression: ExpressionSequence) : Statement()
+
+data class SwitchStatement
+(
+    val switchToken: Token,
+    val expression: ExpressionSequence,
+    val caseBlock: CaseBlock
+) : Statement()
+
+data class CaseBlock(
+    val caseClauses: List<CaseClause>,
+    val defaultClause: DefaultClause?
+) : Node()
+
+data class CaseClause(val caseToken: Token, val expression: ExpressionSequence?, val statement: Statement) : Node()
+data class DefaultClause(val defaultToken: Token, val statement: Statement) : Node()
+
+data class YieldStatement(
+    val yieldToken: Token,
+    val expression: ExpressionSequence?
+) : Statement()
+
+data class TryStatement(
+    val tryBlock: Block,
+    val catchProduction: CatchProduction?,
+    val finallyProduction: FinallyProduction?
+) : Statement()
+
+data class CatchProduction(
+    val catchToken: Token,
+    val catchParameter: Assignable?,
+    val catchBlock: Block
+) : Node()
+
+data class Assignable(
+    val identifier: Token // identifier, array literal, object literal
+)
+
+data class FinallyProduction(
+    val finallyToken: Token,
+    val finallyBlock: Block
+): Node()
+
 
 data class ExpressionStatement(
     val expressionSequence: ExpressionSequence
@@ -218,8 +288,6 @@ data class TildeExpression(
 ) : SingleExpression()
 
 data class CallExpression(val callee: Node, val arguments: List<Node>) : Node()
-
-data class ReturnStatement(val expression: Node?) : Node()
 
 data class AssignmentStatement(val variableName: String, val expression: Node) : Node()
 
