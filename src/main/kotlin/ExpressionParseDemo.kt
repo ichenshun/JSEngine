@@ -217,8 +217,7 @@ class ExpressionParser(private val tokenStream: TokenStream) {
         if (!tokenStream.hasNext()) {
             return Expression()
         }
-        return parseAdditiveExpression()
-
+        return parseLogicalOrExpression()
     }
 
     private fun parseAtomExpression(): Expression {
@@ -246,7 +245,7 @@ class ExpressionParser(private val tokenStream: TokenStream) {
         while (tokenStream.currentToken().type == TokenType.LOGICAL_OR) {
             val operator = requireToken(TokenType.LOGICAL_OR)
             val rightExp = parseLogicalAndExpression()
-            leftExp = LogicalAndExpression(leftExp, operator, rightExp)
+            leftExp = LogicalOrExpression(leftExp, operator, rightExp)
         }
         return leftExp
     }
@@ -254,7 +253,7 @@ class ExpressionParser(private val tokenStream: TokenStream) {
     private fun parseLogicalAndExpression(): Expression {
         var leftExp = parseAdditiveExpression()
 
-        if (tokenStream.currentToken().type == TokenType.LOGICAL_AND) {
+        while (tokenStream.currentToken().type == TokenType.LOGICAL_AND) {
             val operator = requireToken(TokenType.LOGICAL_AND)
             val rightExp = parseAdditiveExpression()
             leftExp = LogicalAndExpression(leftExp, operator, rightExp)
@@ -265,20 +264,19 @@ class ExpressionParser(private val tokenStream: TokenStream) {
     private fun parseAdditiveExpression(): Expression {
         var leftExp = parseMultiplicativeExpression()
 
-        if (tokenStream.currentToken().type in listOf(TokenType.OPERATOR_ADD, TokenType.OPERATOR_SUB)) {
+        while (tokenStream.currentToken().type in listOf(TokenType.OPERATOR_ADD, TokenType.OPERATOR_SUB)) {
             val operator = tokenStream.currentToken()
             tokenStream.nextToken()
             val rightExp = parseMultiplicativeExpression()
             leftExp = AdditiveExpression(leftExp, operator, rightExp)
         }
-
         return leftExp
     }
 
     private fun parseMultiplicativeExpression(): Expression {
         var leftExp = parseAtomExpression()
 
-        if (tokenStream.currentToken().type in listOf(TokenType.OPERATOR_MUL, TokenType.OPERATOR_DIV)) {
+        while (tokenStream.currentToken().type in listOf(TokenType.OPERATOR_MUL, TokenType.OPERATOR_DIV)) {
             val operator = tokenStream.currentToken()
             tokenStream.nextToken()
             val rightExp = parseAtomExpression()
@@ -313,8 +311,11 @@ fun main() {
     val expr4 = "10 * 20 + 30 * 40"
     val expr5 = "10 * ( 20 + 30 )"
     val expr6 = "10 * ( 20 + 30 ) + 40"
-    val expr7 = "10 * 20 * 30 + 50"
-    val lexer = ExpressionLexer(expr7)
+    val expr7 = "10 * 20 * 30 + 40"
+    val expr8 = "10 * 20 / 30 - 40 * 50"
+    val expr9 = "10 * 20 / ( 30 - 40 ) * 50"
+    val expr10 = "60 + 70 - 80 - 10 * 20 / ( 30 - 40 ) * 50"
+    val lexer = ExpressionLexer(expr)
     val tokens = lexer.tokens()
     println(tokens)
     val parser = ExpressionParser(tokens)
