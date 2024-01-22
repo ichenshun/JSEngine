@@ -46,12 +46,55 @@ class Parser(private val lexer: Lexer) {
         }
     }
 
-    private fun parseEmptyStatement(): EmptyStatement {
-        return EmptyStatement(requireToken(TokenType.SEMICOLON))
+    private fun parseBlock(): Block {
+        requireToken(TokenType.OPEN_BRACE)
+        val statements = parseStatementList()
+        requireToken(TokenType.CLOSE_BRACE)
+        return Block(statements)
     }
 
-    private fun parseDebuggerStatement(): DebuggerStatement {
-        return DebuggerStatement(requireToken(TokenType.KEYWORD_DEBUGGER))
+    private fun parseVariableStatement(): VariableStatement {
+        return VariableStatement(parseVariableDeclarationList())
+    }
+
+    private fun parseVariableDeclarationList(): VariableDeclarationList {
+        val varModifier = parseVariableModifier()
+        val variableDeclarations  = mutableListOf<VariableDeclaration>()
+        variableDeclarations.add(parseVariableDeclaration())
+        while (lexer.currentToken.type != TokenType.EOF
+            && lexer.currentToken.type != TokenType.SEMICOLON
+            && lexer.currentToken.type != TokenType.CLOSE_BRACE
+        ) {
+            requireToken(TokenType.COMMA)
+            variableDeclarations.add(parseVariableDeclaration())
+        }
+        return VariableDeclarationList(varModifier, variableDeclarations)
+    }
+
+    private fun parseVariableModifier(): VarModifier {
+        return VarModifier(requireToken(TokenType.KEYWORD_VAR))
+    }
+
+    private fun parseVariableDeclaration(): VariableDeclaration {
+        val variableName = requireToken(TokenType.IDENTIFIER)
+        var initializer: SingleExpression? = null
+        if (lexer.currentToken.type == TokenType.EQUAL) {
+            eatToken(TokenType.EQUAL)
+            initializer = parseSingleExpression()
+        }
+        return VariableDeclaration(variableName, initializer)
+    }
+
+    private fun parseImportStatement(): ImportStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseExportStatement(): ExportStatement {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseEmptyStatement(): EmptyStatement {
+        return EmptyStatement(requireToken(TokenType.SEMICOLON))
     }
 
     private fun parseTryStatement(): TryStatement {
@@ -68,10 +111,6 @@ class Parser(private val lexer: Lexer) {
             null
         }
         return TryStatement(tryBlock, catchProduction, finallyProduction)
-    }
-
-    private fun parseFinallyProduction(): FinallyProduction {
-        return FinallyProduction(requireToken(TokenType.KEYWORD_FINALLY), parseBlock())
     }
 
     private fun parseCatchProduction(): CatchProduction {
@@ -95,6 +134,14 @@ class Parser(private val lexer: Lexer) {
             else ->
                 throw IllegalStateException("Expected assignable, found ${lexer.currentToken}")
         }
+    }
+
+    private fun parseFinallyProduction(): FinallyProduction {
+        return FinallyProduction(requireToken(TokenType.KEYWORD_FINALLY), parseBlock())
+    }
+
+    private fun parseDebuggerStatement(): DebuggerStatement {
+        return DebuggerStatement(requireToken(TokenType.KEYWORD_DEBUGGER))
     }
 
     private fun parseSwitchStatement(): SwitchStatement {
@@ -196,48 +243,6 @@ class Parser(private val lexer: Lexer) {
         return ContinueStatement(continueToken, label)
     }
 
-    private fun parseExportStatement(): ExportStatement {
-        TODO("Not yet implemented")
-    }
-
-    private fun parseImportStatement(): ImportStatement {
-        TODO("Not yet implemented")
-    }
-
-    private fun parseBlock(): Block {
-        requireToken(TokenType.OPEN_BRACE)
-        val statements = parseStatementList()
-        requireToken(TokenType.CLOSE_BRACE)
-        return Block(statements)
-    }
-
-    private fun parseVariableStatement(): VariableStatement {
-        requireToken(TokenType.KEYWORD_VAR)
-        return VariableStatement(parseVariableDeclarationList())
-    }
-
-    private fun parseVariableDeclarationList(): VariableDeclarationList {
-        val variableDeclarations  = mutableListOf<VariableDeclaration>()
-        variableDeclarations.add(parseVariableDeclaration())
-        while (lexer.currentToken.type != TokenType.EOF
-            && lexer.currentToken.type != TokenType.SEMICOLON
-            && lexer.currentToken.type != TokenType.CLOSE_BRACE
-        ) {
-            requireToken(TokenType.COMMA)
-            variableDeclarations.add(parseVariableDeclaration())
-        }
-        return VariableDeclarationList(variableDeclarations)
-    }
-
-    private fun parseVariableDeclaration(): VariableDeclaration {
-        val variableName = requireToken(TokenType.IDENTIFIER)
-        var initializer: SingleExpression? = null
-        if (lexer.currentToken.type == TokenType.EQUAL) {
-            eatToken(TokenType.EQUAL)
-            initializer = parseSingleExpression()
-        }
-        return VariableDeclaration(variableName, initializer)
-    }
 
     private fun parseFunctionDeclaration(): FunctionDeclaration {
         // 解析函数名

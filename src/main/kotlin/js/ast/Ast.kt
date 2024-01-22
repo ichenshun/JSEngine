@@ -20,15 +20,19 @@ data class Block(
     val statementList: StatementList
 ) : Statement()
 
-data class ExportStatement(
-    val declaration: Node
-) : Statement()
 
 data class ImportStatement(
+    val importToken: Token,
+    val importFromBlock: ImportFromBlock,
+) : Statement()
+
+open class ImportFromBlock: Node()
+
+data class ImportFrom(
     val moduleSpecifier: Token,
     val namedImports: List<NamedImport>,
     val defaultImport: DefaultImport?
-) : Statement()
+) : ImportFromBlock()
 
 data class NamedImport(
     val identifier: Token,
@@ -40,6 +44,9 @@ data class DefaultImport(
     val isTypeOnly: Boolean
 ) : Node()
 
+data class ExportStatement(
+    val declaration: Node
+) : Statement()
 
 data class FunctionDeclaration(
     val functionName: Token,
@@ -60,13 +67,18 @@ data class VariableStatement(
     val variableDeclarationList: VariableDeclarationList
 ) : Statement()
 
+data class VariableDeclarationList(
+    val varModifier: VarModifier,
+    val variableDeclaration: List<VariableDeclaration>
+) : Statement()
+
+data class VarModifier(
+    val token: Token
+) : Node()
+
 data class VariableDeclaration(
     val variableName: Token,
     val initializer: Node?
-) : Statement()
-
-data class VariableDeclarationList(
-    val variableDeclaration: List<VariableDeclaration>
 ) : Statement()
 
 data class IfStatement(
@@ -106,8 +118,6 @@ data class ForOfStatement(
     val expressionSequence: ExpressionSequence,
     val statement: Statement
 ) : IterationStatement()
-
-data class DebuggerStatement(val token: Token) : Statement()
 
 data class ContinueStatement(
     val continueToken: Token,
@@ -193,6 +203,7 @@ data class FinallyProduction(
     val finallyBlock: Block
 ): Node()
 
+data class DebuggerStatement(val token: Token) : Statement()
 
 data class ExpressionStatement(
     val expressionSequence: ExpressionSequence
