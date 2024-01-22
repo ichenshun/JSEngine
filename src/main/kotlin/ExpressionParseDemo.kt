@@ -60,7 +60,8 @@ enum class TokenType {
     RIGHT_PAREN,
     LOGICAL_NOT,
     LOGICAL_AND,
-    LOGICAL_OR
+    LOGICAL_OR,
+    EOF
 }
 
 open class TokenStream(val tokens: List<Token>) {
@@ -68,13 +69,21 @@ open class TokenStream(val tokens: List<Token>) {
 
     fun nextToken() : Token? {
         if (index >= tokens.size - 1) {
+            index++
             return null
         }
         return tokens[++index]
     }
 
     fun currentToken() : Token {
+        if (index >= tokens.size){
+           return Token("", TokenType.EOF)
+        }
         return tokens[index]
+    }
+
+    fun hasNext(): Boolean {
+        return index < tokens.size - 1
     }
 
     override fun toString(): String {
@@ -133,7 +142,7 @@ class ExpressionParser(private val tokenStream: TokenStream) {
     fun parseExpression() : Expression {
         when (tokenStream.currentToken().type) {
             TokenType.LEFT_PAREN -> {
-                return parserParenExpression()
+                return parseParenExpression()
             }
             TokenType.LOGICAL_NOT -> {
                 return UnaryExpression(requireToken(TokenType.LOGICAL_NOT), parseExpression())
@@ -173,10 +182,49 @@ class ExpressionParser(private val tokenStream: TokenStream) {
         }
     }
 
+    fun parseExpression2(): Expression {
+        if (!tokenStream.hasNext()) {
+            return Expression()
+        }
+        val leftExp = parseAtomExpression()
+        val operator = tokenStream.currentToken()
+        tokenStream.nextToken()
+        val rightExp = parseExpression2()
+        when (operator.type) {
+            TokenType.OPERATOR_ADD, TokenType.OPERATOR_SUB -> {
+                return AdditiveExpression(leftExp, operator, rightExp)
+            }
+
+            TokenType.OPERATOR_DIV, TokenType.OPERATOR_MUL -> {
+                return MultiplicativeExpression(leftExp, operator, rightExp)
+            }
+
+            TokenType.LOGICAL_AND -> {
+                return LogicalAndExpression(leftExp, operator, rightExp)
+            }
+
+            TokenType.LOGICAL_OR -> {
+                return LogicalOrExpression(leftExp, operator, rightExp)
+            }
+
+            else -> {
+                throw IllegalStateException("Unexpected token: ${tokenStream.currentToken()}")
+            }
+        }
+    }
+
+    fun parseExpression3(): Expression {
+        if (!tokenStream.hasNext()) {
+            return Expression()
+        }
+        return parseAdditiveExpression()
+
+    }
+
     private fun parseAtomExpression(): Expression {
         when (tokenStream.currentToken().type) {
             TokenType.LEFT_PAREN -> {
-                return parserParenExpression()
+                return parseParenExpression()
             }
 
             TokenType.LOGICAL_NOT -> {
@@ -228,21 +276,21 @@ class ExpressionParser(private val tokenStream: TokenStream) {
     }
 
     private fun parseMultiplicativeExpression(): Expression {
-        var leftExp = Expression() //parseAtomExpression()
+        var leftExp = parseAtomExpression()
 
         if (tokenStream.currentToken().type in listOf(TokenType.OPERATOR_MUL, TokenType.OPERATOR_DIV)) {
             val operator = tokenStream.currentToken()
             tokenStream.nextToken()
-            val rightExp = Expression() //parseAtomExpression()
+            val rightExp = parseAtomExpression()
             leftExp = MultiplicativeExpression(leftExp, operator, rightExp)
         }
 
         return leftExp
     }
 
-    private fun parserParenExpression(): ParenExpression {
+    private fun parseParenExpression(): ParenExpression {
         requireToken(TokenType.LEFT_PAREN)
-        val expr = parseExpression()
+        val expr = parseExpression3()
         requireToken(TokenType.RIGHT_PAREN)
         return ParenExpression(expr)
     }
@@ -261,11 +309,16 @@ class ExpressionParser(private val tokenStream: TokenStream) {
 fun main() {
     val expr = "10 + 20 * 30 + ( 40 - 50 || d ) && a || b && ! c"
     val expr2 = "10 + 20 * 30"
-    val lexer = ExpressionLexer(expr2)
+    val expr3 = "10 * 20 + 30"
+    val expr4 = "10 * 20 + 30 * 40"
+    val expr5 = "10 * ( 20 + 30 )"
+    val expr6 = "10 * ( 20 + 30 ) + 40"
+    val expr7 = "10 * 20 * 30 + 50"
+    val lexer = ExpressionLexer(expr7)
     val tokens = lexer.tokens()
     println(tokens)
     val parser = ExpressionParser(tokens)
-    val tree = parser.parseExpression()
+    val tree = parser.parseExpression3()
     println(tree)
 }
 
