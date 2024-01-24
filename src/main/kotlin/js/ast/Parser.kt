@@ -422,6 +422,122 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseSingleExpression(): SingleExpression {
+        return parseTemplateStringExpression()
+    }
+
+    private fun parseTemplateStringExpression(): SingleExpression {
+        var leftExpression = parseAssignmentOperatorExpression()
+        while (lexer.currentToken.type == TokenType.TEMPLATE_STRING_START) {
+            val template = parseTemplateStringLiteral()
+            leftExpression = TemplateStringExpression(leftExpression, template)
+        }
+        return leftExpression
+    }
+
+    private fun parseTemplateStringLiteral(): TemplateStringLiteral {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseAssignmentOperatorExpression(): SingleExpression {
+        var leftExpression = parseAssignmentExpression()
+        while (lexer.currentToken.type == TokenType.ASSIGNMENT_OPERATOR) {
+            val operatorToken = requireToken(TokenType.ASSIGNMENT_OPERATOR)
+            val rightExpression = parseAssignmentExpression()
+            leftExpression = AssignmentOperatorExpression(leftExpression, operatorToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseAssignmentExpression(): SingleExpression {
+        var leftExpression = parseTernaryExpression()
+        while (lexer.currentToken.type == TokenType.EQUAL) {
+            val operatorToken = requireToken(TokenType.EQUAL)
+            val rightExpression = parseTernaryExpression()
+            leftExpression = AssignmentExpression(leftExpression, operatorToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseTernaryExpression(): SingleExpression {
+        var leftExpression = parseLogicalOrExpression()
+        while (lexer.currentToken.type == TokenType.QUESTION_MARK) {
+            val questionToken = requireToken(TokenType.QUESTION_MARK)
+            val middleExpression = parseLogicalOrExpression()
+            // TODO : 三元运算符解析需要考虑嵌套情况
+            val colonToken = requireToken(TokenType.COLON)
+            val rightExpression = parseLogicalOrExpression()
+            leftExpression =
+                TernaryExpression(leftExpression, questionToken, middleExpression, colonToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseLogicalOrExpression(): SingleExpression {
+        var leftExpression = parseLogicalAndExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_OR) {
+            val operatorToken = requireToken(TokenType.OPERATOR_OR)
+            val rightExpression = parseLogicalAndExpression()
+            leftExpression = LogicalOrExpression(leftExpression, operatorToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseLogicalAndExpression(): SingleExpression {
+        var leftExpression = parseBitOrExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_AND) {
+            val operatorToken = requireToken(TokenType.OPERATOR_AND)
+            val rightExpression = parseBitOrExpression()
+            leftExpression = LogicalAndExpression(leftExpression, operatorToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseBitOrExpression(): SingleExpression {
+        var leftExpression = parseBitXorExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_BIT_OR) {
+            val operatorToken = requireToken(TokenType.OPERATOR_BIT_OR)
+            val rightExpression = parseBitXorExpression()
+            leftExpression = BitOrExpression(leftExpression, operatorToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseBitXorExpression(): SingleExpression {
+        var leftExpression = parseBitAndExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_BIT_XOR) {
+            val operatorToken = requireToken(TokenType.OPERATOR_BIT_XOR)
+            val rightExpression = parseBitAndExpression()
+            leftExpression = BitXorExpression(leftExpression, operatorToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseBitAndExpression(): SingleExpression {
+        var leftExpression = parseEqualityExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_BIT_AND) {
+            val operatorToken = requireToken(TokenType.OPERATOR_BIT_AND)
+            val rightExpression = parseEqualityExpression()
+            leftExpression = BitAndExpression(leftExpression, operatorToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseEqualityExpression(): SingleExpression {
+        var leftExpression = parseInExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_EQUAL ||
+            lexer.currentToken.type == TokenType.OPERATOR_NOT_EQUAL) {
+            val operatorToken = requireToken(TokenType.OPERATOR_EQUAL, TokenType.OPERATOR_NOT_EQUAL)
+            val rightExpression = parseInExpression()
+            leftExpression = EqualityExpression(leftExpression, operatorToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseInExpression(): SingleExpression {
+        TODO("Not yet implemented")
+    }
+
+    private fun parseAtomSingleExpression(): SingleExpression {
         when (lexer.currentToken.type) {
             TokenType.KEYWORD_FUNCTION -> return parseFunctionExpression()
             TokenType.KEYWORD_NEW -> return parseNewExpression()
@@ -595,13 +711,13 @@ class Parser(private val lexer: Lexer) {
         }
     }
 
-    private fun requireToken(tokenType: TokenType): Token {
+    private fun requireToken(vararg tokenTypes: TokenType): Token {
         val currentToken = lexer.currentToken
-        if (currentToken.type == tokenType) {
+        if (currentToken.type in tokenTypes) {
             lexer.nextToken()
             return currentToken
         } else {
-            throw IllegalStateException("Expected token type $tokenType but got ${lexer.currentToken.type}")
+            throw IllegalStateException("Expected token type $tokenTypes but got ${lexer.currentToken.type}")
         }
     }
 

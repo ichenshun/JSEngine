@@ -326,6 +326,20 @@ data class AssignmentExpression(
     val rhs: SingleExpression
 ) : SingleExpression()
 
+data class TernaryExpression(
+    val leftExpression: SingleExpression,
+    val questionToken: Token,
+    val middleExpression: SingleExpression,
+    val colonToken: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class LogicalOrExpression(
+    val left: SingleExpression,
+    val op: Token,
+    val right: SingleExpression
+) : SingleExpression()
+
 data class ArrayLiteralExpression(
     val elements: List<Node>
 ) : SingleExpression()
@@ -335,6 +349,69 @@ data class TildeExpression(
 ) : SingleExpression()
 
 data class CallExpression(val callee: Node, val arguments: List<Node>) : Node()
+
+data class TemplateStringExpression(
+    val expression: SingleExpression,
+    val templateStringLiteral: TemplateStringLiteral
+) : SingleExpression()
+
+data class TemplateStringLiteral(
+    val parts: List<String>
+) : Node()
+
+data class AssignmentOperatorExpression(
+    val leftExpression: SingleExpression,
+    val assignmentOperator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class LogicalAndExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class BitOrExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class BitXorExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class BitAndExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class EqualityExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class RelationalExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class BitShiftExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class AdditiveExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
 
 data class AssignmentStatement(val variableName: String, val expression: Node) : Node()
 
