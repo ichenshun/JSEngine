@@ -59,7 +59,7 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseVariableDeclarationList(): VariableDeclarationList {
         val varModifier = parseVariableModifier()
-        val variableDeclarations  = mutableListOf<VariableDeclaration>()
+        val variableDeclarations = mutableListOf<VariableDeclaration>()
         variableDeclarations.add(parseVariableDeclaration())
         while (lexer.currentToken.type != TokenType.EOF
             && lexer.currentToken.type != TokenType.SEMICOLON
@@ -155,7 +155,7 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseCaseBlock(): CaseBlock {
         requireToken(TokenType.OPEN_BRACE)
-        var caseClauses: CaseClauses? =null
+        var caseClauses: CaseClauses? = null
         if (lexer.currentToken.type != TokenType.KEYWORD_CASE) {
             caseClauses = parseCaseClauses()
         }
@@ -164,7 +164,7 @@ class Parser(private val lexer: Lexer) {
             defaultClause = parseDefaultClause()
         }
 
-        var caseClauses2: CaseClauses? =null
+        var caseClauses2: CaseClauses? = null
         if (lexer.currentToken.type != TokenType.KEYWORD_CASE) {
             caseClauses2 = parseCaseClauses()
         }
@@ -205,7 +205,8 @@ class Parser(private val lexer: Lexer) {
     private fun parseThrowStatement(): ThrowStatement {
         return ThrowStatement(
             requireToken(TokenType.KEYWORD_THROW),
-            parseExpressionSequence())
+            parseExpressionSequence()
+        )
     }
 
     private fun parseWithStatement(): WithStatement {
@@ -524,8 +525,16 @@ class Parser(private val lexer: Lexer) {
     private fun parseEqualityExpression(): SingleExpression {
         var leftExpression = parseInExpression()
         while (lexer.currentToken.type == TokenType.OPERATOR_EQUAL ||
-            lexer.currentToken.type == TokenType.OPERATOR_NOT_EQUAL) {
-            val operatorToken = requireToken(TokenType.OPERATOR_EQUAL, TokenType.OPERATOR_NOT_EQUAL)
+            lexer.currentToken.type == TokenType.OPERATOR_NOT_EQUAL ||
+            lexer.currentToken.type == TokenType.OPERATOR_IDENTITY_EQUAL ||
+            lexer.currentToken.type == TokenType.OPERATOR_IDENTITY_NOT_EQUAL
+        ) {
+            val operatorToken = requireToken(
+                TokenType.OPERATOR_EQUAL,
+                TokenType.OPERATOR_NOT_EQUAL,
+                TokenType.OPERATOR_IDENTITY_EQUAL,
+                TokenType.OPERATOR_IDENTITY_NOT_EQUAL
+            )
             val rightExpression = parseInExpression()
             leftExpression = EqualityExpression(leftExpression, operatorToken, rightExpression)
         }
@@ -533,6 +542,111 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseInExpression(): SingleExpression {
+        var leftExpression = parseInstanceOfExpression()
+        while (lexer.currentToken.type == TokenType.KEYWORD_IN) {
+            val inToken = requireToken(TokenType.KEYWORD_IN)
+            val rightExpression = parseInstanceOfExpression()
+            leftExpression = InExpression(leftExpression, inToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseInstanceOfExpression(): SingleExpression {
+        var leftExpression = parseRelationalExpression()
+        while (lexer.currentToken.type == TokenType.KEYWORD_INSTANCEOF) {
+            val inToken = requireToken(TokenType.KEYWORD_INSTANCEOF)
+            val rightExpression = parseRelationalExpression()
+            leftExpression = InstanceOfExpression(leftExpression, inToken, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseRelationalExpression(): SingleExpression {
+        var leftExpression = parseBitShiftExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_LESS_THAN ||
+            lexer.currentToken.type == TokenType.OPERATOR_MORE_THAN ||
+            lexer.currentToken.type == TokenType.OPERATOR_LESS_THAN_EQUALS ||
+            lexer.currentToken.type == TokenType.OPERATOR_MORE_THAN_EQUALS
+        ) {
+            val operator = requireToken(
+                TokenType.OPERATOR_LESS_THAN,
+                TokenType.OPERATOR_MORE_THAN,
+                TokenType.OPERATOR_LESS_THAN_EQUALS,
+                TokenType.OPERATOR_MORE_THAN_EQUALS
+            )
+            val rightExpression = parseBitShiftExpression()
+            leftExpression = RelationalExpression(leftExpression, operator, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseBitShiftExpression(): SingleExpression {
+        var leftExpression = parseCoalesceExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_LEFT_SHIFT_ARITHMETIC ||
+            lexer.currentToken.type == TokenType.OPERATOR_RIGHT_SHIFT_ARITHMETIC ||
+            lexer.currentToken.type == TokenType.OPERATOR_RIGHT_SHIFT_LOGICAL
+        ) {
+            val operator = requireToken(
+                TokenType.OPERATOR_LEFT_SHIFT_ARITHMETIC,
+                TokenType.OPERATOR_RIGHT_SHIFT_ARITHMETIC,
+                TokenType.OPERATOR_RIGHT_SHIFT_LOGICAL
+            )
+            val rightExpression = parseCoalesceExpression()
+            leftExpression = BitShiftExpression(leftExpression, operator, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseCoalesceExpression(): SingleExpression {
+        var leftExpression = parseAdditiveExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_NULL_COALESCE) {
+            val operator = requireToken(TokenType.OPERATOR_NULL_COALESCE)
+            val rightExpression = parseAdditiveExpression()
+            leftExpression = CoalesceExpression(leftExpression, operator, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseAdditiveExpression(): SingleExpression {
+        var leftExpression = parseMultiplicativeExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_PLUS
+            || lexer.currentToken.type == TokenType.OPERATOR_MINUS
+        ) {
+            val operator = requireToken(TokenType.OPERATOR_PLUS, TokenType.OPERATOR_MINUS)
+            val rightExpression = parseMultiplicativeExpression()
+            leftExpression = AdditiveExpression(leftExpression, operator, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parseMultiplicativeExpression(): SingleExpression {
+        var leftExpression = parsePowerExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_MULTIPLY
+            || lexer.currentToken.type == TokenType.OPERATOR_DIVIDE
+            || lexer.currentToken.type == TokenType.OPERATOR_MOD
+        ) {
+            val operator = requireToken(
+                TokenType.OPERATOR_MULTIPLY,
+                TokenType.OPERATOR_DIVIDE,
+                TokenType.OPERATOR_MOD
+            )
+            val rightExpression = parsePowerExpression()
+            leftExpression = MultiplicativeExpression(leftExpression, operator, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parsePowerExpression(): SingleExpression {
+        var leftExpression = parsePostDecreaseExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_POWER) {
+            val operator = requireToken(TokenType.OPERATOR_POWER)
+            val rightExpression = parsePostDecreaseExpression()
+            leftExpression = PowerExpression(leftExpression, operator, rightExpression)
+        }
+        return leftExpression
+    }
+
+    private fun parsePostDecreaseExpression(): SingleExpression {
         TODO("Not yet implemented")
     }
 

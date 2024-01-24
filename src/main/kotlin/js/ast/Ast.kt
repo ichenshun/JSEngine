@@ -395,7 +395,19 @@ data class EqualityExpression(
     val rightExpression: SingleExpression
 ) : SingleExpression()
 
+data class InExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
 data class RelationalExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class InstanceOfExpression(
     val leftExpression: SingleExpression,
     val operator: Token,
     val rightExpression: SingleExpression
@@ -407,13 +419,41 @@ data class BitShiftExpression(
     val rightExpression: SingleExpression
 ) : SingleExpression()
 
+data class CoalesceExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
 data class AdditiveExpression(
     val leftExpression: SingleExpression,
     val operator: Token,
     val rightExpression: SingleExpression
 ) : SingleExpression()
 
-data class AssignmentStatement(val variableName: String, val expression: Node) : Node()
+data class MultiplicativeExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+data class PowerExpression(
+    val leftExpression: SingleExpression,
+    val operator: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
+
+
+data class IncrementExpression(val expression: SingleExpression, val operator: Token) : SingleExpression()
+
+data class DecrementExpression(val expression: SingleExpression, val operator: Token) : SingleExpression()
+
+data class UnaryExpression(val operator: Token, val expression: SingleExpression) : SingleExpression()
+
+data class PostfixExpression(val expression: SingleExpression, val operator: Token) : SingleExpression()
+
+data class PrefixExpression(val operator: Token, val expression: SingleExpression) : SingleExpression()
+
 
 data class Call(val name: String, val arguments: List<Node>) : Node()
 data class If(val condition: Node, val ifTrue: Node, val ifFalse: Node?) : Node()
