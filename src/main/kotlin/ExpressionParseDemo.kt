@@ -45,6 +45,7 @@ data class LogicalAndExpression(val left: Expression, val op: Token, val right: 
 data class LogicalOrExpression(val left: Expression, val op: Token, val right: Expression) : Expression()
 data class UnaryExpression(val op: Token, val expr: Expression) : Expression()
 data class ParenExpression(val expr: Expression) : Expression()
+data class TernaryExpression(val left: Expression, val middle: Expression, val right: Expression): Expression()
 
 data class Token(val text: String, val type: TokenType)
 
@@ -61,7 +62,9 @@ enum class TokenType {
     LOGICAL_NOT,
     LOGICAL_AND,
     LOGICAL_OR,
-    EOF
+    EOF,
+    QUESTION,
+    COLON
 }
 
 open class TokenStream(val tokens: List<Token>) {
@@ -133,6 +136,12 @@ class ExpressionLexer(private val input: String) {
         }
         if (token == "||") {
             return TokenType.LOGICAL_OR
+        }
+        if (token == "?") {
+            return TokenType.QUESTION
+        }
+        if (token == ":")  {
+            return TokenType.COLON
         }
         throw IllegalArgumentException("Invalid token: $token")
     }
@@ -217,7 +226,19 @@ class ExpressionParser(private val tokenStream: TokenStream) {
         if (!tokenStream.hasNext()) {
             return Expression()
         }
-        return parseLogicalOrExpression()
+        return parseTernaryExpression()
+    }
+
+    private fun parseTernaryExpression(): Expression {
+        var left = parseLogicalOrExpression()
+        if (tokenStream.currentToken().type == TokenType.QUESTION) {
+            requireToken(TokenType.QUESTION)
+            val middle = parseTernaryExpression()
+            requireToken(TokenType.COLON)
+            val right = parseTernaryExpression()
+            left = TernaryExpression(left, middle, right)
+        }
+        return left
     }
 
     private fun parseAtomExpression(): Expression {
@@ -315,7 +336,11 @@ fun main() {
     val expr8 = "10 * 20 / 30 - 40 * 50"
     val expr9 = "10 * 20 / ( 30 - 40 ) * 50"
     val expr10 = "60 + 70 - 80 - 10 * 20 / ( 30 - 40 ) * 50"
-    val lexer = ExpressionLexer(expr)
+    val expr11 = "a ? b : c"
+    val expr12 = "a || d ? b : c"
+    val expr13 = "a ? b ? c : d ? f : g : ( e ? h : i )"
+    val expr14 = "a ? ( b ? c : d ? f : g ) : e + 40 ? h + 1 : i / j "
+    val lexer = ExpressionLexer(expr14)
     val tokens = lexer.tokens()
     println(tokens)
     val parser = ExpressionParser(tokens)

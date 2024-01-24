@@ -460,12 +460,11 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseTernaryExpression(): SingleExpression {
         var leftExpression = parseLogicalOrExpression()
-        while (lexer.currentToken.type == TokenType.QUESTION_MARK) {
+        if (lexer.currentToken.type == TokenType.QUESTION_MARK) {
             val questionToken = requireToken(TokenType.QUESTION_MARK)
-            val middleExpression = parseLogicalOrExpression()
-            // TODO : 三元运算符解析需要考虑嵌套情况
+            val middleExpression = parseTernaryExpression()
             val colonToken = requireToken(TokenType.COLON)
-            val rightExpression = parseLogicalOrExpression()
+            val rightExpression = parseTernaryExpression()
             leftExpression =
                 TernaryExpression(leftExpression, questionToken, middleExpression, colonToken, rightExpression)
         }
