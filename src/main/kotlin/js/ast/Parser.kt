@@ -79,7 +79,7 @@ class Parser(private val lexer: Lexer) {
         val variableName = requireToken(TokenType.IDENTIFIER)
         var initializer: SingleExpression? = null
         if (lexer.currentToken.type == TokenType.EQUAL) {
-            eatToken(TokenType.EQUAL)
+            requireToken(TokenType.EQUAL)
             initializer = parseSingleExpression()
         }
         return VariableDeclaration(variableName, initializer)
@@ -647,6 +647,55 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parsePostDecreaseExpression(): SingleExpression {
+        var leftExpression = parsePostIncrementExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_MINUS_MINUS) {
+            val operator = requireToken(TokenType.OPERATOR_MINUS_MINUS)
+            leftExpression = PostDecreaseExpression(leftExpression, operator)
+        }
+        return leftExpression
+    }
+
+    private fun parsePostIncrementExpression(): SingleExpression {
+        var leftExpression = parseArgumentsExpression()
+        while (lexer.currentToken.type == TokenType.OPERATOR_PLUS_PLUS) {
+            val operator = requireToken(TokenType.OPERATOR_PLUS_PLUS)
+            leftExpression = PostIncrementExpression(leftExpression, operator)
+        }
+        return leftExpression
+    }
+
+    private fun parseArgumentsExpression(): SingleExpression {
+        var leftExpression = parseMemberDotExpression()
+        while (lexer.currentToken.type == TokenType.OPEN_PAREN) {
+            leftExpression = ArgumentExpression(leftExpression, parseArguments())
+        }
+        return leftExpression
+    }
+
+    private fun parseArguments(): Arguments {
+        requireToken(TokenType.OPEN_PAREN)
+        val arguments = mutableListOf<Argument>()
+        if (lexer.currentToken.type != TokenType.CLOSE_PAREN) {
+            arguments.add(parseArgument())
+            while (lexer.currentToken.type == TokenType.COMMA) {
+                requireToken(TokenType.COMMA)
+                if (lexer.currentToken.type != TokenType.CLOSE_PAREN) {
+                    arguments.add(parseArgument())
+                } else {
+                    break
+                }
+            }
+        }
+        requireToken(TokenType.CLOSE_PAREN)
+        return Arguments(arguments)
+    }
+
+    private fun parseArgument(): Argument {
+        val ellipse = if (lexer.currentToken.type == TokenType.ELLIPSIS) lexer.currentToken else null
+        return Argument(ellipse, parseSingleExpression())
+    }
+
+    private fun parseMemberDotExpression(): SingleExpression {
         TODO("Not yet implemented")
     }
 
@@ -805,10 +854,6 @@ class Parser(private val lexer: Lexer) {
         return IdentifierExpression(requireToken(TokenType.IDENTIFIER))
     }
 
-    private fun parseArguments(): List<Node> {
-        TODO("Not yet implemented")
-    }
-
     private fun parseExpressionSequence(): ExpressionSequence {
         val expressions = mutableListOf<SingleExpression>()
         expressions.add(parseSingleExpression())
@@ -816,12 +861,6 @@ class Parser(private val lexer: Lexer) {
             expressions.add(parseSingleExpression())
         }
         return ExpressionSequence(expressions)
-    }
-
-    private fun eatToken(tokenType: TokenType) {
-        if (lexer.currentToken.type == tokenType) {
-            lexer.nextToken()
-        }
     }
 
     private fun requireToken(vararg tokenTypes: TokenType): Token {

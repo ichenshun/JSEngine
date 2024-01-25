@@ -236,7 +236,7 @@ data class FunctionExpression(
 
 data class NewExpression(
     val expression: SingleExpression,
-    val arguments: List<Node>
+    val arguments: Arguments
 ) : SingleExpression()
 
 data class DeleteExpression(
@@ -260,12 +260,41 @@ data class PreDecreaseExpression(
 ) : SingleExpression()
 
 data class PostIncrementExpression(
-    val expression: SingleExpression
+    val expression: SingleExpression,
+    val operator: Token
 ) : SingleExpression()
 
 data class PostDecreaseExpression(
-    val expression: SingleExpression
+    val expression: SingleExpression,
+    val operator: Token
 ) : SingleExpression()
+
+data class ArgumentExpression(
+    val expression: SingleExpression,
+    val arguments: Arguments
+) : SingleExpression()
+
+data class Arguments(
+    val arguments: List<Argument>
+)
+
+data class Argument(
+    val ellipse: Token?,
+    val expression: SingleExpression
+)
+
+data class MemberDotExpression(
+    val expression: SingleExpression,
+    val questionToken: Token?,
+    val dotToken: Token,
+    val hashtagToken: Token?,
+    val identifier: Token
+)
+
+data class ObjectLiteralExpression(
+    val properties: List<Property>
+) : SingleExpression()
+
 
 data class UnaryPlusExpression(
     val expression: SingleExpression
