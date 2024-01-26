@@ -347,11 +347,11 @@ data class BooleanLiteralExpression(
 ) : SingleExpression()
 
 data class StringLiteralExpression(
-    val value: String
+    val value: Token
 ) : SingleExpression()
 
 data class NumericLiteralExpression(
-    val value: Double
+    val value: Token
 ) : SingleExpression()
 
 data class ArrayAccessExpression(

@@ -4,14 +4,22 @@ import kotlin.String
 
 
 class CharStream(private val text: String) {
-    private var position: Int = 0
+    private var position: Int = -1
     private var markPosition: Int = 0
 
-    fun nextChar():Char? {
+    var currentChar: Char? = nextChar()
+
+    fun nextChar(): Char? {
         if (position >= text.length) {
-            return null;
+           return null
         }
-        return text[position++]
+        position++
+        if (position >= text.length) {
+            currentChar = null
+            return null
+        }
+        currentChar = text[position]
+        return currentChar
     }
 
     /**
