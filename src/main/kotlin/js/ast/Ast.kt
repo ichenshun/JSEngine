@@ -289,7 +289,21 @@ data class MemberDotExpression(
     val dotToken: Token,
     val hashtagToken: Token?,
     val identifier: Token
-)
+) : SingleExpression()
+
+data class MemberIndexExpression(
+    val leftExpression: SingleExpression,
+    val questionDotToken: Token?,
+    val openBracketToken: Token,
+    val expressionSequence: ExpressionSequence,
+    val closeBracketToken: Token,
+) : SingleExpression()
+
+data class OptionalChainExpression(
+    val leftExpression: SingleExpression,
+    val questionDotToken: Token,
+    val rightExpression: SingleExpression
+) : SingleExpression()
 
 data class ObjectLiteralExpression(
     val properties: List<Property>

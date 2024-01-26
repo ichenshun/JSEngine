@@ -131,6 +131,7 @@ class Parser(private val lexer: Lexer) {
             TokenType.ARRAY_LITERAL,
             TokenType.OBJECT_LITERAL
             -> return Assignable(lexer.currentToken)
+
             else ->
                 throw IllegalStateException("Expected assignable, found ${lexer.currentToken}")
         }
@@ -696,7 +697,50 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseMemberDotExpression(): SingleExpression {
-        TODO("Not yet implemented")
+        var leftExpression = parseMemberIndexExpression()
+        while (lexer.currentToken.type == TokenType.QUESTION_MARK ||
+            lexer.currentToken.type == TokenType.DOT
+        ) {
+            val questionToke =
+                if (lexer.currentToken.type == TokenType.QUESTION_MARK) requireToken(TokenType.QUESTION_MARK) else
+                    null
+            val dotToken = requireToken(TokenType.DOT)
+            val hastTagToken =
+                if (lexer.currentToken.type == TokenType.HASHTAG) requireToken(TokenType.HASHTAG) else null
+            val identifier = requireToken(TokenType.IDENTIFIER)
+            leftExpression = MemberDotExpression(leftExpression, questionToke, dotToken, hastTagToken, identifier)
+        }
+        return leftExpression
+    }
+
+    private fun parseMemberIndexExpression(): SingleExpression {
+        var leftExpression = parseOptionalChainExpression()
+        while (lexer.currentToken.type == TokenType.QUESTION_MARK_DOT ||
+            lexer.currentToken.type == TokenType.OPEN_BRACKET) {
+            val questionDotToken = if (lexer.currentToken.type == TokenType.QUESTION_MARK_DOT)
+                requireToken(TokenType.QUESTION_MARK_DOT) else null
+            val openBracket = requireToken(TokenType.OPEN_BRACKET)
+            val expressionSequence = parseExpressionSequence()
+            val closeBracket = requireToken(TokenType.CLOSE_BRACKET)
+            leftExpression = MemberIndexExpression(
+                leftExpression,
+                questionDotToken,
+                openBracket,
+                expressionSequence,
+                closeBracket
+            )
+        }
+        return leftExpression
+    }
+
+    private fun parseOptionalChainExpression(): SingleExpression {
+        var leftExpression = parseAtomSingleExpression()
+        while (lexer.currentToken.type == TokenType.QUESTION_MARK_DOT) {
+            val questionDotToken = requireToken(TokenType.QUESTION_MARK_DOT)
+            val rightExpression = parseAtomSingleExpression()
+            leftExpression = OptionalChainExpression(leftExpression, questionDotToken, rightExpression)
+        }
+        return leftExpression
     }
 
     private fun parseAtomSingleExpression(): SingleExpression {

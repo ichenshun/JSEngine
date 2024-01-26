@@ -214,4 +214,7 @@ enum class TokenType {
     OPERATOR_MINUS_MINUS,
     OPERATOR_PLUS_PLUS,
     ELLIPSIS,
+    DOT,
+    HASHTAG,
+    QUESTION_MARK_DOT,
 }
