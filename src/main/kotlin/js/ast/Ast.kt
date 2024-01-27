@@ -235,8 +235,9 @@ data class FunctionExpression(
 ) : SingleExpression()
 
 data class NewExpression(
+    val newToken: Token,
     val expression: SingleExpression,
-    val arguments: Arguments
+    val arguments: Arguments?
 ) : SingleExpression()
 
 data class DeleteExpression(
@@ -269,7 +270,7 @@ data class PostDecreaseExpression(
     val operator: Token
 ) : SingleExpression()
 
-data class ArgumentExpression(
+data class ArgumentsExpression(
     val expression: SingleExpression,
     val arguments: Arguments
 ) : SingleExpression()
@@ -304,11 +305,6 @@ data class OptionalChainExpression(
     val questionDotToken: Token,
     val rightExpression: SingleExpression
 ) : SingleExpression()
-
-data class ObjectLiteralExpression(
-    val properties: List<Property>
-) : SingleExpression()
-
 
 data class UnaryPlusExpression(
     val expression: SingleExpression
@@ -353,6 +349,54 @@ data class StringLiteralExpression(
 data class NumericLiteralExpression(
     val value: Token
 ) : SingleExpression()
+
+data class ObjectLiteralExpression(
+    val openBracketToken: Token,
+    val propertyAssignments: List<PropertyAssignment>,
+    val closeBracketToken: Token
+): LiteralExpression()
+
+open class PropertyAssignment : Node()
+
+data class PropertyExpressionAssignment(
+    val propertyName: PropertyName,
+    val colonToken: Token,
+    val propertyValue: SingleExpression
+) : PropertyAssignment()
+
+data class PropertyShorthandAssignment(
+    val name: PropertyName
+) : PropertyAssignment()
+
+data class SpreadAssignment(
+    val expression: SingleExpression
+) : PropertyAssignment()
+
+data class ComputedPropertyNameAssignment(
+    val name: PropertyName,
+    val expression: SingleExpression
+) : PropertyAssignment()
+
+// PropertyName
+open class PropertyName : Node()
+
+data class IdentifierPropertyName(
+    val name: Token
+) : PropertyName()
+
+data class StringLiteralPropertyName(
+    val value: Token
+) : PropertyName()
+
+data class NumericLiteralPropertyName(
+    val value: Token
+) : PropertyName()
+
+data class ComputedPropertyName(
+    val openBracketToken: Token,
+    val expression: SingleExpression,
+    val closeBracketToken: Token
+) : PropertyName()
 
 data class ArrayAccessExpression(
     val array: SingleExpression,
@@ -527,7 +571,6 @@ data class ObjectLiteral(val properties: List<Property>) : Node()
 data class ArrayLiteral(val elements: List<Node>) : Node()
 data class UnaryOperation(val operator: String, val operand: Node) : Node()
 data class VariableAssignment(val name: String, val value: Node) : Node()
-data class PropertyAssignment(val jsobject: Node, val name: String, val value: Node) : Node()
 data class Number(val value: Double) : Node()
 data class BinaryOperation(val operator: String, val left: Node, val right: Node) : Node()
 data class Variable(val name: String) : Node()

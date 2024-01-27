@@ -191,13 +191,14 @@ class Lexer(private val stream: CharStream) {
     private fun parseIdentifierToken(): Token {
         stream.mark()
         while (stream.nextChar()?.isLetterOrDigit() == true) {}
-        return Token(TokenType.IDENTIFIER, stream.substring())
+        val identifier = stream.substring()
+        val type = keywords[identifier] ?: TokenType.IDENTIFIER
+        return Token(type, identifier)
     }
 
     private fun parseOperatorToken(): Token {
         stream.mark()
         var indexMap: Map<*, *> = operatorIndexMap
-        // !=b
         while (stream.currentChar?.isOpcode() == true) {
             val type = indexMap[stream.currentChar] ?: break
             if (type is TokenType) {

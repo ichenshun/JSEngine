@@ -61,12 +61,12 @@ class Parser(private val lexer: Lexer) {
         val varModifier = parseVariableModifier()
         val variableDeclarations = mutableListOf<VariableDeclaration>()
         variableDeclarations.add(parseVariableDeclaration())
-        while (lexer.currentToken.type != TokenType.EOF
-            && lexer.currentToken.type != TokenType.SEMICOLON
-            && lexer.currentToken.type != TokenType.CLOSE_BRACE
-        ) {
+        while (isToken(TokenType.COMMA)) {
             requireToken(TokenType.COMMA)
             variableDeclarations.add(parseVariableDeclaration())
+            if (isToken(TokenType.EOF, TokenType.SEMICOLON, TokenType.CLOSE_BRACE)) {
+                break
+            }
         }
         return VariableDeclarationList(varModifier, variableDeclarations)
     }
@@ -668,7 +668,7 @@ class Parser(private val lexer: Lexer) {
     private fun parseArgumentsExpression(): SingleExpression {
         var leftExpression = parseMemberDotExpression()
         while (lexer.currentToken.type == TokenType.OPEN_PAREN) {
-            leftExpression = ArgumentExpression(leftExpression, parseArguments())
+            leftExpression = ArgumentsExpression(leftExpression, parseArguments())
         }
         return leftExpression
     }
@@ -702,11 +702,10 @@ class Parser(private val lexer: Lexer) {
             lexer.currentToken.type == TokenType.OPERATOR_DOT
         ) {
             val questionToke =
-                if (lexer.currentToken.type == TokenType.OPERATOR_QUESTION_MARK) requireToken(TokenType.OPERATOR_QUESTION_MARK) else
-                    null
+                if (isToken(TokenType.OPERATOR_QUESTION_MARK)) requireToken(TokenType.OPERATOR_QUESTION_MARK) else null
             val dotToken = requireToken(TokenType.OPERATOR_DOT)
             val hastTagToken =
-                if (lexer.currentToken.type == TokenType.OPERATOR_HASHTAG) requireToken(TokenType.OPERATOR_HASHTAG) else null
+                if (isToken(TokenType.OPERATOR_HASHTAG)) requireToken(TokenType.OPERATOR_HASHTAG) else null
             val identifier = requireToken(TokenType.IDENTIFIER)
             leftExpression = MemberDotExpression(leftExpression, questionToke, dotToken, hastTagToken, identifier)
         }
@@ -770,8 +769,97 @@ class Parser(private val lexer: Lexer) {
         }
     }
 
-    private fun parseObjectLiteralExpression(): SingleExpression {
-        TODO("Not yet implemented")
+    private fun parseObjectLiteralExpression(): ObjectLiteralExpression {
+        val openBraceToken = requireToken(TokenType.OPEN_BRACE)
+        val properties = mutableListOf<PropertyAssignment>()
+        if (!isToken(TokenType.CLOSE_BRACE)) {
+            properties.add(parsePropertyAssignment())
+        }
+        while (isToken(TokenType.COMMA)) {
+            requireToken(TokenType.COMMA)
+            if (!isToken(TokenType.CLOSE_BRACE)) {
+                properties.add(parsePropertyAssignment())
+            }
+        }
+        val closeBraceToken = requireToken(TokenType.CLOSE_BRACE)
+        return ObjectLiteralExpression(openBraceToken, properties, closeBraceToken)
+    }
+
+    private fun parsePropertyAssignment(): PropertyAssignment {
+        val propertyName = parsePropertyName()
+        val colonToken = requireToken(TokenType.OPERATOR_COLON)
+        val propertyValue = parseSingleExpression()
+        // TODO 解析其他类型的属性赋值
+        return PropertyExpressionAssignment(propertyName, colonToken, propertyValue)
+    }
+
+    private fun parsePropertyName(): PropertyName {
+        return when {
+            isToken(TokenType.STRING_LITERAL) -> StringLiteralPropertyName(eatToken())
+            isToken(TokenType.NUMBER_LITERAL) -> NumericLiteralPropertyName(eatToken())
+            isToken(TokenType.IDENTIFIER,
+                TokenType.NULL_LITERAL,
+                TokenType.BOOLEAN_LITERAL
+            ) -> {
+                IdentifierPropertyName(eatToken())
+            }
+            isToken(TokenType.OPEN_BRACKET) -> parseComputedPropertyName()
+            isKeyword(lexer.currentToken.type) -> IdentifierPropertyName(eatToken())
+            else -> throw IllegalStateException("Unexpected token: " + lexer.currentToken)
+        }
+    }
+
+    private fun parseComputedPropertyName(): ComputedPropertyName {
+        val openBracketToken = requireToken(TokenType.OPEN_BRACKET)
+        val expression = parseSingleExpression()
+        val closeBracketToken = requireToken(TokenType.CLOSE_BRACKET)
+        return ComputedPropertyName(openBracketToken, expression, closeBracketToken)
+    }
+
+    private fun isKeyword(tokenType: TokenType): Boolean {
+        when (tokenType) {
+            TokenType.KEYWORD_FUNCTION,
+            TokenType.KEYWORD_IF,
+            TokenType.KEYWORD_ELSE,
+            TokenType.KEYWORD_WHILE,
+            TokenType.KEYWORD_FOR,
+            TokenType.KEYWORD_DO,
+            TokenType.KEYWORD_TRY,
+            TokenType.KEYWORD_CATCH,
+            TokenType.KEYWORD_FINALLY,
+            TokenType.KEYWORD_THROW,
+            TokenType.KEYWORD_SWITCH,
+            TokenType.KEYWORD_CASE,
+            TokenType.KEYWORD_DEFAULT,
+            TokenType.KEYWORD_BREAK,
+            TokenType.KEYWORD_CONTINUE,
+            TokenType.KEYWORD_RETURN,
+            TokenType.KEYWORD_VAR,
+            TokenType.KEYWORD_LET,
+            TokenType.KEYWORD_CONST,
+            TokenType.KEYWORD_CLASS,
+            TokenType.KEYWORD_EXTENDS,
+            TokenType.KEYWORD_IMPLEMENTS,
+            TokenType.KEYWORD_INTERFACE,
+            TokenType.KEYWORD_NEW,
+            TokenType.KEYWORD_THIS,
+            TokenType.KEYWORD_SUPER,
+            TokenType.KEYWORD_YIELD,
+            TokenType.KEYWORD_WITH,
+            TokenType.KEYWORD_AS,
+            TokenType.KEYWORD_IN,
+            TokenType.KEYWORD_OF,
+            TokenType.KEYWORD_TYPEOF,
+            TokenType.KEYWORD_INSTANCEOF,
+            TokenType.KEYWORD_IMPORT,
+            TokenType.KEYWORD_FROM,
+            TokenType.KEYWORD_EXPORT,
+            TokenType.KEYWORD_DELETE,
+            TokenType.KEYWORD_AWAIT,
+            TokenType.KEYWORD_VOID,
+            TokenType.KEYWORD_DEBUGGER -> return true
+            else -> return false
+        }
     }
 
     private fun parseArrayLiteralExpression(): SingleExpression {
@@ -830,10 +918,14 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseNewExpression(): NewExpression {
-        requireToken(TokenType.KEYWORD_NEW)
+        val newToken = requireToken(TokenType.KEYWORD_NEW)
         val expression = parseSingleExpression()
-        val arguments = parseArguments()
-        return NewExpression(expression, arguments)
+        val arguments = if (isToken(TokenType.OPEN_PAREN)) {
+             parseArguments()
+        } else {
+            null
+        }
+        return NewExpression(newToken, expression, arguments)
     }
 
     private fun parseDeleteExpression(): DeleteExpression {
@@ -916,6 +1008,16 @@ class Parser(private val lexer: Lexer) {
         } else {
             throw IllegalStateException("Expected token type ${tokenTypes.contentToString()} but got ${lexer.currentToken.type}")
         }
+    }
+
+    private fun isToken(vararg tokenType: TokenType): Boolean {
+        return lexer.currentToken.type in tokenType
+    }
+
+    private fun eatToken(): Token {
+        val token = lexer.currentToken
+        lexer.nextToken()
+        return token
     }
 
     private fun isStatementLeaderToken(tokenType: TokenType): Boolean {
