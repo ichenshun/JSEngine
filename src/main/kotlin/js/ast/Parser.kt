@@ -247,21 +247,30 @@ class Parser(private val lexer: Lexer) {
 
 
     private fun parseFunctionDeclaration(): FunctionDeclaration {
-        // 解析函数名
-        requireToken(TokenType.KEYWORD_FUNCTION)
+        val asyncToken = optionalToken(TokenType.KEYWORD_ASYNC)
+        val functionToken = requireToken(TokenType.KEYWORD_FUNCTION)
         val functionName = requireToken(TokenType.IDENTIFIER)
+        val asteriskToken = optionalToken(TokenType.OPERATOR_MULTIPLY)
 
-        // 解析参数列表
-        requireToken(TokenType.OPEN_PAREN)
+        val openParen  = requireToken(TokenType.OPEN_PAREN)
         val parameters = parseFormalParameterList()
-        requireToken(TokenType.CLOSE_PAREN)
+        val closeParen = requireToken(TokenType.CLOSE_PAREN)
 
         val body = parseFunctionBody()
 
-        return FunctionDeclaration(functionName, parameters, body)
+        return FunctionDeclaration(
+            asyncToken,
+            functionToken,
+            asteriskToken,
+            functionName,
+            openParen,
+            parameters,
+            closeParen,
+            body)
     }
 
     private fun parseFormalParameterList(): List<Token> {
+        // TODO 解析 ECMAScript 6: Rest Parameter
         val parameters = mutableListOf<Token>()
         parameters.add(requireToken(TokenType.IDENTIFIER))
         while (lexer.currentToken.type != TokenType.CLOSE_PAREN) {
@@ -273,10 +282,10 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseFunctionBody(): FunctionBody {
         // 解析函数体
-        requireToken(TokenType.OPEN_BRACE)
+        val openBraceToken = requireToken(TokenType.OPEN_BRACE)
         val statements = parseStatementList()
-        requireToken(TokenType.CLOSE_BRACE)
-        return FunctionBody(statements)
+        val closeBraceToken = requireToken(TokenType.CLOSE_BRACE)
+        return FunctionBody(openBraceToken, statements, closeBraceToken)
     }
 
     private fun parseStatementList(): StatementList {
@@ -910,9 +919,7 @@ class Parser(private val lexer: Lexer) {
         requireToken(TokenType.CLOSE_PAREN)
 
         // 解析函数体
-        requireToken(TokenType.OPEN_BRACE)
         val body = parseFunctionBody()
-        requireToken(TokenType.CLOSE_BRACE)
 
         return FunctionExpression(functionName, parameters, body)
     }
@@ -1008,6 +1015,13 @@ class Parser(private val lexer: Lexer) {
         } else {
             throw IllegalStateException("Expected token type ${tokenTypes.contentToString()} but got ${lexer.currentToken.type}")
         }
+    }
+
+    private fun optionalToken(vararg tokenTypes: TokenType): Token? {
+        if (lexer.currentToken.type in tokenTypes) {
+            return eatToken()
+        }
+        return null
     }
 
     private fun isToken(vararg tokenType: TokenType): Boolean {

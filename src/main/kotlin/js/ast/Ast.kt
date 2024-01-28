@@ -49,13 +49,20 @@ data class ExportStatement(
 ) : Statement()
 
 data class FunctionDeclaration(
+    val asyncToken: Token?,
+    val functionKeyword: Token,
+    val asteriskToken: Token?,
     val functionName: Token,
+    val openParenToken: Token,
     val parameters: List<Token>,
+    val closeParenToken: Token,
     val body: FunctionBody
 ) : Statement()
 
 data class FunctionBody(
-    val statementList: StatementList
+    val openBraceToken: Token,
+    val statementList: StatementList,
+    val closeBracketToken: Token
 ): Node()
 
 data class EmptyStatement(
@@ -408,9 +415,9 @@ data class CommaExpression(
 ) : SingleExpression()
 
 data class AssignmentExpression(
-    val lhs: SingleExpression,
-    val op: Token,
-    val rhs: SingleExpression
+    val leftExpression: SingleExpression,
+    val assignOperator: Token,
+    val rightExpression: SingleExpression
 ) : SingleExpression()
 
 data class TernaryExpression(
