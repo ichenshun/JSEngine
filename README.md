@@ -13,7 +13,8 @@
 - https://github.com/antlr/grammars-v4/blob/master/javascript/javascript/JavaScriptParser.g4
 
 ### 目前进展
-实现了基本的词法分析和语法分析，构建了基本的AST。还在完善中
+1. 实现了基本的词法分析和语法分析，构建了基本的AST。
+2. 正在实现执行器，遍历AST，解释执行
 
 ### 后续计划
 实现执行器，可以直接执行AST
