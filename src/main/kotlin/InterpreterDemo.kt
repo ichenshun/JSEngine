@@ -35,4 +35,16 @@ fun main() {
 
     code = "\"abc\""
     println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
+
+    code = """
+        var a=1
+        var b=1+a
+        var c=5+a+b
+        if (c<1) {
+            2
+        } else {
+            3
+        }
+    """
+    println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
 }

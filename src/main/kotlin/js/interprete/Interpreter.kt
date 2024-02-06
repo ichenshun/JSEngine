@@ -95,7 +95,13 @@ class Interpreter {
     }
 
     private fun evaluateIfStatement(statement: IfStatement): JsValue {
-        TODO("Not yet implemented")
+        val value = evaluateExpressionStatement(statement.condition)
+        if  (value.toBoolean()) {
+            return evaluateStatement(statement.trueStatement)
+        } else if (statement.falseStatement != null) {
+            return evaluateStatement(statement.falseStatement)
+        }
+        return JsValue.UNDEFINED
     }
 
     private fun evaluateFunctionDeclaration(node: FunctionDeclaration): JsValue {
@@ -276,7 +282,7 @@ class Interpreter {
         val rightValue = powerExpression.rightExpression.evaluate()
         println("left=${leftValue.value}, right=${rightValue.value}")
         return when (powerExpression.operator.type) {
-            TokenType.OPERATOR_POWER -> JsValue(ValueType.NUMBER, (leftValue.value as Double).pow(rightValue.value as Double))
+            TokenType.OPERATOR_POWER -> JsValue(ValueType.NUMBER, leftValue.toDouble().pow(rightValue.toDouble()))
             else -> throw IllegalArgumentException("Invalid operator: ${powerExpression.operator.type}")
         }
     }
@@ -285,8 +291,8 @@ class Interpreter {
         val leftValue = multiplicativeExpression.leftExpression.evaluate()
         val rightValue = multiplicativeExpression.rightExpression.evaluate()
         return when (multiplicativeExpression.operator.type) {
-            TokenType.OPERATOR_MULTIPLY -> JsValue(ValueType.NUMBER, (leftValue.value as Double) * (rightValue.value as Double))
-            TokenType.OPERATOR_DIVIDE -> JsValue(ValueType.NUMBER, (leftValue.value as Double) / (rightValue.value as Double))
+            TokenType.OPERATOR_MULTIPLY -> JsValue(ValueType.NUMBER, leftValue.toDouble() * rightValue.toDouble())
+            TokenType.OPERATOR_DIVIDE -> JsValue(ValueType.NUMBER, leftValue.toDouble() / rightValue.toDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${multiplicativeExpression.operator.type}")
         }
     }
@@ -295,8 +301,8 @@ class Interpreter {
         val leftValue = additiveExpression.leftExpression.evaluate()
         val rightValue = additiveExpression.rightExpression.evaluate()
         return when (additiveExpression.operator.type) {
-            TokenType.OPERATOR_PLUS -> JsValue(ValueType.NUMBER, (leftValue.value as Double) + (rightValue.value as Double))
-            TokenType.OPERATOR_MINUS -> JsValue(ValueType.NUMBER, (leftValue.value as Double) - (rightValue.value as Double))
+            TokenType.OPERATOR_PLUS -> JsValue(ValueType.NUMBER, leftValue.toDouble() + rightValue.toDouble())
+            TokenType.OPERATOR_MINUS -> JsValue(ValueType.NUMBER, leftValue.toDouble() - rightValue.toDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${additiveExpression.operator.type}")
         }
     }
@@ -314,13 +320,13 @@ class Interpreter {
         val rightValue = relationalExpression.rightExpression.evaluate()
         return when (relationalExpression.operator.type) {
             TokenType.OPERATOR_LESS_THAN ->
-                JsValue(ValueType.BOOLEAN, ((leftValue.value as Double) < (rightValue.value as Double)).toDouble())
+                JsValue(ValueType.BOOLEAN, leftValue.toDouble() < rightValue.toDouble())
             TokenType.OPERATOR_MORE_THAN ->
-                JsValue(ValueType.BOOLEAN, ((leftValue.value as Double) > (rightValue.value as Double)).toDouble())
+                JsValue(ValueType.BOOLEAN, leftValue.toDouble() > rightValue.toDouble())
             TokenType.OPERATOR_LESS_THAN_EQUALS ->
-                JsValue(ValueType.BOOLEAN, ((leftValue.value as Double) <= (rightValue.value as Double)).toDouble())
+                JsValue(ValueType.BOOLEAN, leftValue.toDouble() >= rightValue.toDouble())
             TokenType.OPERATOR_MORE_THAN_EQUALS ->
-                JsValue(ValueType.BOOLEAN, ((leftValue.value as Double) >= (rightValue.value as Double)).toDouble())
+                JsValue(ValueType.BOOLEAN, leftValue.toDouble() <= rightValue.toDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${relationalExpression.operator.type}")
         }
     }
@@ -334,7 +340,16 @@ class Interpreter {
     }
 
     private fun evaluateEqualityExpression(equalityExpression: EqualityExpression): JsValue {
-        TODO("Not yet implemented")
+        val leftValue = equalityExpression.leftExpression.evaluate()
+        val rightValue = equalityExpression.rightExpression.evaluate()
+        return when (equalityExpression.operator.type) {
+            TokenType.OPERATOR_EQUAL -> JsValue(ValueType.BOOLEAN, leftValue == rightValue)
+            TokenType.OPERATOR_NOT_EQUAL -> JsValue(ValueType.BOOLEAN, leftValue != rightValue)
+            // TODO: 处理对象想等
+            TokenType.OPERATOR_IDENTITY_EQUAL -> JsValue(ValueType.BOOLEAN, leftValue === rightValue)
+            TokenType.OPERATOR_IDENTITY_NOT_EQUAL -> JsValue(ValueType.BOOLEAN, leftValue !== rightValue)
+            else -> throw IllegalArgumentException("Invalid operator: ${equalityExpression.operator.type}")
+        }
     }
 
     private fun evaluateBitAndExpression(bitAndExpression: BitAndExpression): JsValue {
