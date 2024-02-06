@@ -13,8 +13,6 @@ enum class TokenType {
     // "关键字"
     KEYWORD,
 
-    KEYWORD_FUNCTION,
-
     // "标识符"
     IDENTIFIER,
 
@@ -36,6 +34,12 @@ enum class TokenType {
     // 正则表达式字面量
     REGEX_LITERAL,
 
+    TEMPLATE_STRING_START,
+
+    ARRAY_LITERAL,
+
+    OBJECT_LITERAL,
+
     // 运算符
     OPERATOR,
 
@@ -51,35 +55,10 @@ enum class TokenType {
     // 空
     NONE,
 
-    // 数值
-    NUMBER,
-
-    // 左括号
-    OPEN_PAREN,
-
-    // 右括号
-    CLOSE_PAREN,
-
-    // 左中括号
-    OPEN_BRACKET,
-
-    // 右中括号
-    CLOSE_BRACKET,
-
-    // 左大括号
-    OPEN_BRACE,
-
-    // 右大括号
-    CLOSE_BRACE,
-
-    // 分号
-    SEMICOLON,
-
-    // 逗号
-    COMMA,
-
     // 结束符
     EOF,
+
+    KEYWORD_FUNCTION,
 
     // 关键字if
     KEYWORD_IF,
@@ -107,48 +86,6 @@ enum class TokenType {
 
     // 关键字this
     KEYWORD_THIS,
-
-    // ++
-    OPERATOR_INCREMENT,
-
-    // --
-    OPERATOR_DECREMENT,
-
-    // +
-    OPERATOR_PLUS,
-
-    // -
-    OPERATOR_MINUS,
-
-    // *
-    OPERATOR_MULTIPLY,
-
-    // /
-    OPERATOR_DIVIDE,
-
-    // %
-    OPERATOR_MODULUS,
-
-    // ==
-    OPERATOR_EQUAL,
-
-    // !=
-    OPERATOR_NOT_EQUAL,
-
-    // >
-    OPERATOR_GREATER,
-
-    // <
-    OPERATOR_LESS,
-
-    // >=
-    OPERATOR_GREATER_EQUAL,
-
-    // ~
-    OPERATOR_BIT_NOT,
-
-    // !
-    OPERATOR_NOT,
 
     // 关键字else
     KEYWORD_ELSE,
@@ -180,12 +117,79 @@ enum class TokenType {
     KEYWORD_CATCH,
     KEYWORD_FINALLY,
     KEYWORD_INSTANCEOF,
-    ARRAY_LITERAL,
-    OBJECT_LITERAL,
-    OPERATOR_COLON,
     KEYWORD_CASE,
     KEYWORD_DEFAULT,
-    TEMPLATE_STRING_START,
+    KEYWORD_AS,
+    KEYWORD_FROM,
+    KEYWORD_ENUM,
+    KEYWORD_EXTENDS,
+    KEYWORD_CONST,
+    KEYWORD_IMPLEMENTS,
+    KEYWORD_LET,
+    KEYWORD_PRIVATE,
+    KEYWORD_PUBLIC,
+    KEYWORD_INTERFACE,
+    KEYWORD_PACKAGE,
+    KEYWORD_PROTECTED,
+    KEYWORD_STATIC,
+
+    // 左括号
+    OPERATOR_OPEN_PAREN,
+
+    // 右括号
+    OPERATOR_CLOSE_PAREN,
+
+    // 左中括号
+    OPERATOR_OPEN_BRACKET,
+
+    // 右中括号
+    OPERATOR_CLOSE_BRACKET,
+
+    // 左大括号
+    OPERATOR_OPEN_BRACE,
+
+    // 右大括号
+    OPERATOR_CLOSE_BRACE,
+
+    // 分号
+    OPERATOR_SEMICOLON,
+
+    // 逗号
+    OPERATOR_COMMA,
+    OPERATOR_COLON,
+
+    // ++
+    OPERATOR_INCREMENT,
+
+    // --
+    OPERATOR_DECREMENT,
+
+    // +
+    OPERATOR_PLUS,
+
+    // -
+    OPERATOR_MINUS,
+
+    // *
+    OPERATOR_MULTIPLY,
+
+    // /
+    OPERATOR_DIVIDE,
+
+    // %
+    OPERATOR_MODULUS,
+
+    // ==
+    OPERATOR_EQUAL,
+
+    // !=
+    OPERATOR_NOT_EQUAL,
+
+    // ~
+    OPERATOR_BIT_NOT,
+
+    // !
+    OPERATOR_NOT,
     OPERATOR_ASSIGN,
     OPERATOR_QUESTION_MARK,
     OPERATOR_OR,
@@ -224,17 +228,4 @@ enum class TokenType {
     OPERATOR_BIT_AND_ASSIGN,
     OPERATOR_BIT_XOR_ASSIGN,
     OPERATOR_BIT_OR_ASSIGN,
-    KEYWORD_AS,
-    KEYWORD_FROM,
-    KEYWORD_ENUM,
-    KEYWORD_EXTENDS,
-    KEYWORD_CONST,
-    KEYWORD_IMPLEMENTS,
-    KEYWORD_LET,
-    KEYWORD_PRIVATE,
-    KEYWORD_PUBLIC,
-    KEYWORD_INTERFACE,
-    KEYWORD_PACKAGE,
-    KEYWORD_PROTECTED,
-    KEYWORD_STATIC,
 }

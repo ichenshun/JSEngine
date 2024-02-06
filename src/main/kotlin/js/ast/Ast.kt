@@ -7,7 +7,7 @@ import kotlin.String
 sealed class Node
 
 data class Program(
-    val statements: List<Statement>
+    val statementList: StatementList
 ) : Node()
 
 open class Statement: Node()
@@ -48,6 +48,8 @@ data class ExportStatement(
     val declaration: Node
 ) : Statement()
 
+class ClassDeclaration(): Statement()
+
 data class FunctionDeclaration(
     val asyncToken: Token?,
     val functionKeyword: Token,
@@ -76,7 +78,7 @@ data class VariableStatement(
 
 data class VariableDeclarationList(
     val varModifier: VarModifier,
-    val variableDeclaration: List<VariableDeclaration>
+    val variableDeclarations: List<VariableDeclaration>
 ) : Statement()
 
 data class VarModifier(
@@ -85,7 +87,7 @@ data class VarModifier(
 
 data class VariableDeclaration(
     val variableName: Token,
-    val initializer: Node?
+    val initializer: SingleExpression?
 ) : Statement()
 
 data class IfStatement(
@@ -317,6 +319,14 @@ data class UnaryPlusExpression(
     val expression: SingleExpression
 ) : SingleExpression()
 
+class ImportExpression() : SingleExpression()
+
+data class YieldExpression(
+    val statement: YieldStatement
+) : SingleExpression()
+
+class SuperExpression() : SingleExpression()
+
 data class UnaryMinusExpression(
     val expression: SingleExpression
 ) : SingleExpression()
@@ -326,6 +336,10 @@ data class BitNotExpression(
 ) : SingleExpression()
 
 data class NotExpression(
+    val expression: SingleExpression
+) : SingleExpression()
+
+data class AwaitExpression(
     val expression: SingleExpression
 ) : SingleExpression()
 
@@ -361,7 +375,7 @@ data class ObjectLiteralExpression(
     val openBracketToken: Token,
     val propertyAssignments: List<PropertyAssignment>,
     val closeBracketToken: Token
-): LiteralExpression()
+): SingleExpression()
 
 open class PropertyAssignment : Node()
 
@@ -405,15 +419,6 @@ data class ComputedPropertyName(
     val closeBracketToken: Token
 ) : PropertyName()
 
-data class ArrayAccessExpression(
-    val array: SingleExpression,
-    val index: SingleExpression
-) : SingleExpression()
-
-data class CommaExpression(
-    val expressions: List<SingleExpression>
-) : SingleExpression()
-
 data class AssignmentExpression(
     val leftExpression: SingleExpression,
     val assignOperator: Token,
@@ -437,12 +442,6 @@ data class LogicalOrExpression(
 data class ArrayLiteralExpression(
     val elements: List<Node>
 ) : SingleExpression()
-
-data class TildeExpression(
-    val expression: SingleExpression
-) : SingleExpression()
-
-data class CallExpression(val callee: Node, val arguments: List<Node>) : Node()
 
 data class TemplateStringExpression(
     val expression: SingleExpression,
@@ -536,51 +535,3 @@ data class PowerExpression(
     val operator: Token,
     val rightExpression: SingleExpression
 ) : SingleExpression()
-
-
-data class IncrementExpression(val expression: SingleExpression, val operator: Token) : SingleExpression()
-
-data class DecrementExpression(val expression: SingleExpression, val operator: Token) : SingleExpression()
-
-data class UnaryExpression(val operator: Token, val expression: SingleExpression) : SingleExpression()
-
-data class PostfixExpression(val expression: SingleExpression, val operator: Token) : SingleExpression()
-
-data class PrefixExpression(val operator: Token, val expression: SingleExpression) : SingleExpression()
-
-
-data class Call(val name: String, val arguments: List<Node>) : Node()
-data class If(val condition: Node, val ifTrue: Node, val ifFalse: Node?) : Node()
-data class While(val condition: Node, val body: Node) : Node()
-
-data class Return(val value: Node?) : Node()
-data class String(val value: String) : Node()
-//data class Boolean(val value: Boolean) : Node()
-data class Null(val value:Any?=null) : Node()
-data class Undefined(val value:Any?=null) : Node()
-data class Array(val elements: List<Node>) : Node()
-data class Object(val properties: List<Property>) : Node()
-data class Property(val name: String, val value: Node) : Node()
-data class ObjectGetter(val jsobject: Node, val property: String) : Node()
-data class ObjectSetter(val jsobject: Node, val property: String, val value: Node) : Node()
-data class New(val constructor: Node, val arguments: List<Node>) : Node()
-data class This(val value: Any?=null) : Node()
-data class ObjectGet(val jsobject: Node, val property: String) : Node()
-data class ObjectSet(val jsobject: Node, val property: String, val value: Node) : Node()
-data class UndefinedLiteral(val value: Any?=null) : Node()
-data class For(val initializer: Node?, val condition: Node?, val iterator: Node?, val body: Node) : Node()
-data class ForIn(val variable: String, val iterable: Node, val body: Node) : Node()
-data class PropertyAccess(val jsobject: Node, val property: String) : Node()
-data class StringLiteral(val value: String) : Node()
-data class BooleanLiteral(val value: Boolean) : Node()
-data class NumberLiteral(val value: Double) : Node()
-data class ObjectLiteral(val properties: List<Property>) : Node()
-data class ArrayLiteral(val elements: List<Node>) : Node()
-data class UnaryOperation(val operator: String, val operand: Node) : Node()
-data class VariableAssignment(val name: String, val value: Node) : Node()
-data class Number(val value: Double) : Node()
-data class BinaryOperation(val operator: String, val left: Node, val right: Node) : Node()
-data class Variable(val name: String) : Node()
-data class Assignment(val variable: Variable, val value: Node) : Node()
-data class FunctionCall(val functionName: String, val arguments: List<Node>) : Node()
-

@@ -1,21 +1,17 @@
 package js.ast
 
-import isOpcode
-import isStringLeader
-import kotlin.String
-
 
 class Lexer(private val stream: CharStream) {
     // 操作符索引
     private val operatorIndexMap = mapOf(
-        '[' to TokenType.OPEN_BRACKET,
-        ']' to TokenType.CLOSE_BRACKET,
-        '(' to TokenType.OPEN_PAREN,
-        ')' to TokenType.CLOSE_PAREN,
-        '{' to TokenType.OPEN_BRACE,
-        '}' to TokenType.CLOSE_BRACE,
-        ';' to TokenType.SEMICOLON,
-        ',' to TokenType.COMMA,
+        '[' to TokenType.OPERATOR_OPEN_BRACKET,
+        ']' to TokenType.OPERATOR_CLOSE_BRACKET,
+        '(' to TokenType.OPERATOR_OPEN_PAREN,
+        ')' to TokenType.OPERATOR_CLOSE_PAREN,
+        '{' to TokenType.OPERATOR_OPEN_BRACE,
+        '}' to TokenType.OPERATOR_CLOSE_BRACE,
+        ';' to TokenType.OPERATOR_SEMICOLON,
+        ',' to TokenType.OPERATOR_COMMA,
         '=' to mapOf(
             null to  TokenType.OPERATOR_ASSIGN,
             '=' to mapOf(
@@ -235,5 +231,13 @@ class Lexer(private val stream: CharStream) {
 
     private fun skipWhitespaceChars() {
         while (stream.nextChar()?.isWhitespace() == true) {}
+    }
+
+    private fun Char.isOpcode(): Boolean {
+        return operatorIndexMap.contains(this)
+    }
+
+    private fun Char.isStringLeader(): Boolean {
+        return this == '"' || this == '\''
     }
 }

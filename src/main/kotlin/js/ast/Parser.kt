@@ -13,20 +13,24 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseProgram(): Program {
+        return Program(parseStatementList())
+    }
+
+    private fun parseStatementList(): StatementList {
         val statements = mutableListOf<Statement>()
-        while (lexer.currentToken.type != TokenType.EOF) {
+        while (isStatementLeaderToken(lexer.currentToken.type)) {
             statements.add(parseStatement())
         }
-        return Program(statements)
+        return StatementList(statements)
     }
 
     private fun parseStatement(): Statement {
         return when (lexer.currentToken.type) {
-            TokenType.OPEN_BRACE -> parseBlock()
+            TokenType.OPERATOR_OPEN_BRACE -> parseBlock()
             TokenType.KEYWORD_VAR -> parseVariableStatement()
             TokenType.KEYWORD_IMPORT -> parseImportStatement()
             TokenType.KEYWORD_EXPORT -> parseExportStatement()
-            TokenType.SEMICOLON -> parseEmptyStatement()
+            TokenType.OPERATOR_SEMICOLON -> parseEmptyStatement()
             TokenType.KEYWORD_FUNCTION -> parseFunctionDeclaration()
             TokenType.KEYWORD_IF -> parseIfStatement()
             TokenType.KEYWORD_DO -> parseDoStatement()
@@ -47,9 +51,9 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseBlock(): Block {
-        requireToken(TokenType.OPEN_BRACE)
+        requireToken(TokenType.OPERATOR_OPEN_BRACE)
         val statements = parseStatementList()
-        requireToken(TokenType.CLOSE_BRACE)
+        requireToken(TokenType.OPERATOR_CLOSE_BRACE)
         return Block(statements)
     }
 
@@ -61,10 +65,10 @@ class Parser(private val lexer: Lexer) {
         val varModifier = parseVariableModifier()
         val variableDeclarations = mutableListOf<VariableDeclaration>()
         variableDeclarations.add(parseVariableDeclaration())
-        while (isToken(TokenType.COMMA)) {
-            requireToken(TokenType.COMMA)
+        while (isToken(TokenType.OPERATOR_COMMA)) {
+            requireToken(TokenType.OPERATOR_COMMA)
             variableDeclarations.add(parseVariableDeclaration())
-            if (isToken(TokenType.EOF, TokenType.SEMICOLON, TokenType.CLOSE_BRACE)) {
+            if (isToken(TokenType.EOF, TokenType.OPERATOR_SEMICOLON, TokenType.OPERATOR_CLOSE_BRACE)) {
                 break
             }
         }
@@ -94,7 +98,7 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseEmptyStatement(): EmptyStatement {
-        return EmptyStatement(requireToken(TokenType.SEMICOLON))
+        return EmptyStatement(requireToken(TokenType.OPERATOR_SEMICOLON))
     }
 
     private fun parseTryStatement(): TryStatement {
@@ -116,8 +120,8 @@ class Parser(private val lexer: Lexer) {
     private fun parseCatchProduction(): CatchProduction {
         val catchToken = requireToken(TokenType.KEYWORD_CATCH)
         var catchAssignable: Assignable? = null
-        if (lexer.currentToken.type == TokenType.OPEN_PAREN) {
-            if (lexer.currentToken.type != TokenType.CLOSE_PAREN) {
+        if (lexer.currentToken.type == TokenType.OPERATOR_OPEN_PAREN) {
+            if (lexer.currentToken.type != TokenType.OPERATOR_CLOSE_PAREN) {
                 catchAssignable = parseAssignable()
             }
         }
@@ -147,15 +151,15 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseSwitchStatement(): SwitchStatement {
         val switchToken = requireToken(TokenType.KEYWORD_SWITCH)
-        requireToken(TokenType.OPEN_PAREN)
+        requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val expressionSequence = parseExpressionSequence()
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         val caseBlock = parseCaseBlock()
         return SwitchStatement(switchToken, expressionSequence, caseBlock)
     }
 
     private fun parseCaseBlock(): CaseBlock {
-        requireToken(TokenType.OPEN_BRACE)
+        requireToken(TokenType.OPERATOR_OPEN_BRACE)
         var caseClauses: CaseClauses? = null
         if (lexer.currentToken.type != TokenType.KEYWORD_CASE) {
             caseClauses = parseCaseClauses()
@@ -170,7 +174,7 @@ class Parser(private val lexer: Lexer) {
             caseClauses2 = parseCaseClauses()
         }
 
-        requireToken(TokenType.CLOSE_BRACE)
+        requireToken(TokenType.OPERATOR_CLOSE_BRACE)
         return CaseBlock(caseClauses, defaultClause, caseClauses2)
     }
 
@@ -212,9 +216,9 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseWithStatement(): WithStatement {
         val withToken = requireToken(TokenType.KEYWORD_WITH)
-        requireToken(TokenType.OPEN_PAREN)
+        requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val expression = parseExpressionSequence()
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         return WithStatement(withToken, expression, parseStatement())
     }
 
@@ -252,9 +256,9 @@ class Parser(private val lexer: Lexer) {
         val functionName = requireToken(TokenType.IDENTIFIER)
         val asteriskToken = optionalToken(TokenType.OPERATOR_MULTIPLY)
 
-        val openParen  = requireToken(TokenType.OPEN_PAREN)
+        val openParen  = requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val parameters = parseFormalParameterList()
-        val closeParen = requireToken(TokenType.CLOSE_PAREN)
+        val closeParen = requireToken(TokenType.OPERATOR_CLOSE_PAREN)
 
         val body = parseFunctionBody()
 
@@ -273,8 +277,8 @@ class Parser(private val lexer: Lexer) {
         // TODO 解析 ECMAScript 6: Rest Parameter
         val parameters = mutableListOf<Token>()
         parameters.add(requireToken(TokenType.IDENTIFIER))
-        while (lexer.currentToken.type != TokenType.CLOSE_PAREN) {
-            requireToken(TokenType.COMMA)
+        while (lexer.currentToken.type != TokenType.OPERATOR_CLOSE_PAREN) {
+            requireToken(TokenType.OPERATOR_COMMA)
             parameters.add(requireToken(TokenType.IDENTIFIER))
         }
         return parameters
@@ -282,35 +286,27 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseFunctionBody(): FunctionBody {
         // 解析函数体
-        val openBraceToken = requireToken(TokenType.OPEN_BRACE)
+        val openBraceToken = requireToken(TokenType.OPERATOR_OPEN_BRACE)
         val statements = parseStatementList()
-        val closeBraceToken = requireToken(TokenType.CLOSE_BRACE)
+        val closeBraceToken = requireToken(TokenType.OPERATOR_CLOSE_BRACE)
         return FunctionBody(openBraceToken, statements, closeBraceToken)
-    }
-
-    private fun parseStatementList(): StatementList {
-        val statements = mutableListOf<Statement>()
-        while (isStatementLeaderToken(lexer.currentToken.type)) {
-            statements.add(parseStatement())
-        }
-        return StatementList(statements)
     }
 
     private fun parseDoStatement(): DoStatement {
         requireToken(TokenType.KEYWORD_DO)
         val statement = parseStatement()
         requireToken(TokenType.KEYWORD_WHILE)
-        requireToken(TokenType.OPEN_PAREN)
+        requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val condition = parseExpressionStatement()
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         return DoStatement(statement, condition)
     }
 
     private fun parseWhileStatement(): WhileStatement {
         requireToken(TokenType.KEYWORD_WHILE)
-        requireToken(TokenType.OPEN_PAREN)
+        requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val condition = parseExpressionStatement()
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         val statement = parseStatement()
         return WhileStatement(condition, statement)
     }
@@ -322,7 +318,7 @@ class Parser(private val lexer: Lexer) {
         if (await) {
             lexer.nextToken()
         }
-        requireToken(TokenType.OPEN_PAREN)
+        requireToken(TokenType.OPERATOR_OPEN_PAREN)
 
         var expressionSequence: ExpressionSequence? = null
         var variableDeclarationList: VariableDeclarationList? = null
@@ -332,7 +328,7 @@ class Parser(private val lexer: Lexer) {
             variableDeclarationList = parseVariableDeclarationList()
         }
 
-        if (lexer.currentToken.type == TokenType.SEMICOLON) {
+        if (lexer.currentToken.type == TokenType.OPERATOR_SEMICOLON) {
             if (await) {
                 throw IllegalStateException("Unexpected 'await' keyword before ';'")
             }
@@ -371,19 +367,19 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseForStatement(initializer: Node?): ForStatement {
         var condition: ExpressionSequence? = null
-        if (lexer.currentToken.type == TokenType.SEMICOLON) {
+        if (lexer.currentToken.type == TokenType.OPERATOR_SEMICOLON) {
             lexer.nextToken()
         } else {
             condition = parseExpressionSequence()
-            requireToken(TokenType.SEMICOLON)
+            requireToken(TokenType.OPERATOR_SEMICOLON)
         }
 
         var increment: ExpressionSequence? = null
-        if (lexer.currentToken.type == TokenType.CLOSE_PAREN) {
+        if (lexer.currentToken.type == TokenType.OPERATOR_CLOSE_PAREN) {
             lexer.nextToken()
         } else {
             increment = parseExpressionSequence()
-            requireToken(TokenType.CLOSE_PAREN)
+            requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         }
         val statement = parseStatement()
         return ForStatement(initializer, condition, increment, statement)
@@ -392,7 +388,7 @@ class Parser(private val lexer: Lexer) {
     private fun parseForInStatement(singleExpressionOrVariableDeclarationList: Node): ForInStatement {
         requireToken(TokenType.KEYWORD_IN)
         val expressionSequence = parseExpressionSequence()
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         val statement = parseStatement()
         return ForInStatement(singleExpressionOrVariableDeclarationList, expressionSequence, statement)
     }
@@ -400,7 +396,7 @@ class Parser(private val lexer: Lexer) {
     private fun parseForOfStatement(await: Boolean, singleExpressionOrVariableDeclarationList: Node): ForOfStatement {
         requireToken(TokenType.KEYWORD_IN)
         val expressionSequence = parseExpressionSequence()
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         val statement = parseStatement()
         return ForOfStatement(false, singleExpressionOrVariableDeclarationList, expressionSequence, statement)
     }
@@ -411,9 +407,9 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseIfStatement(): Statement {
         requireToken(TokenType.KEYWORD_IF)
-        requireToken(TokenType.OPEN_PAREN)
+        requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val condition = ExpressionStatement(parseExpressionSequence())
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         val trueStatement = parseStatement()
         var falseStatement: Statement? = null
         if (lexer.currentToken.type == TokenType.KEYWORD_ELSE) {
@@ -676,27 +672,27 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseArgumentsExpression(): SingleExpression {
         var leftExpression = parseMemberDotExpression()
-        while (lexer.currentToken.type == TokenType.OPEN_PAREN) {
+        while (lexer.currentToken.type == TokenType.OPERATOR_OPEN_PAREN) {
             leftExpression = ArgumentsExpression(leftExpression, parseArguments())
         }
         return leftExpression
     }
 
     private fun parseArguments(): Arguments {
-        requireToken(TokenType.OPEN_PAREN)
+        requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val arguments = mutableListOf<Argument>()
-        if (lexer.currentToken.type != TokenType.CLOSE_PAREN) {
+        if (lexer.currentToken.type != TokenType.OPERATOR_CLOSE_PAREN) {
             arguments.add(parseArgument())
-            while (lexer.currentToken.type == TokenType.COMMA) {
-                requireToken(TokenType.COMMA)
-                if (lexer.currentToken.type != TokenType.CLOSE_PAREN) {
+            while (lexer.currentToken.type == TokenType.OPERATOR_COMMA) {
+                requireToken(TokenType.OPERATOR_COMMA)
+                if (lexer.currentToken.type != TokenType.OPERATOR_CLOSE_PAREN) {
                     arguments.add(parseArgument())
                 } else {
                     break
                 }
             }
         }
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         return Arguments(arguments)
     }
 
@@ -724,12 +720,12 @@ class Parser(private val lexer: Lexer) {
     private fun parseMemberIndexExpression(): SingleExpression {
         var leftExpression = parseOptionalChainExpression()
         while (lexer.currentToken.type == TokenType.OPERATOR_QUESTION_MARK_DOT ||
-            lexer.currentToken.type == TokenType.OPEN_BRACKET) {
+            lexer.currentToken.type == TokenType.OPERATOR_OPEN_BRACKET) {
             val questionDotToken = if (lexer.currentToken.type == TokenType.OPERATOR_QUESTION_MARK_DOT)
                 requireToken(TokenType.OPERATOR_QUESTION_MARK_DOT) else null
-            val openBracket = requireToken(TokenType.OPEN_BRACKET)
+            val openBracket = requireToken(TokenType.OPERATOR_OPEN_BRACKET)
             val expressionSequence = parseExpressionSequence()
-            val closeBracket = requireToken(TokenType.CLOSE_BRACKET)
+            val closeBracket = requireToken(TokenType.OPERATOR_CLOSE_BRACKET)
             leftExpression = MemberIndexExpression(
                 leftExpression,
                 questionDotToken,
@@ -764,33 +760,39 @@ class Parser(private val lexer: Lexer) {
             TokenType.OPERATOR_MINUS -> return parseUnaryMinusExpression()
             TokenType.OPERATOR_BIT_NOT -> return parseBitNotExpression()
             TokenType.OPERATOR_NOT -> return parseNotExpression()
+            TokenType.KEYWORD_AWAIT -> return parseAwaitExpression()
             TokenType.KEYWORD_THIS -> return parseThisExpression()
             TokenType.IDENTIFIER -> return parseIdentifierExpression()
-            TokenType.OPEN_PAREN -> return parseParenthesizedExpression()
+            TokenType.OPERATOR_OPEN_PAREN -> return parseParenthesizedExpression()
             TokenType.NULL_LITERAL -> return parseNullLiteralExpression()
             TokenType.BOOLEAN_LITERAL -> return parseBooleanLiteralExpression()
             TokenType.STRING_LITERAL -> return parseStringLiteralExpression()
             TokenType.NUMBER_LITERAL -> return parseNumericLiteralExpression()
             TokenType.REGEX_LITERAL -> return parseRegularExpressionLiteralExpression()
-            TokenType.OPEN_BRACKET -> return parseArrayLiteralExpression()
-            TokenType.OPEN_BRACE -> return parseObjectLiteralExpression()
+            TokenType.OPERATOR_OPEN_BRACKET -> return parseArrayLiteralExpression()
+            TokenType.OPERATOR_OPEN_BRACE -> return parseObjectLiteralExpression()
             else -> throw IllegalStateException("Unexpected token: " + lexer.currentToken)
         }
     }
 
+    private fun parseAwaitExpression(): SingleExpression {
+        requireToken(TokenType.KEYWORD_AWAIT)
+        return AwaitExpression(parseSingleExpression())
+    }
+
     private fun parseObjectLiteralExpression(): ObjectLiteralExpression {
-        val openBraceToken = requireToken(TokenType.OPEN_BRACE)
+        val openBraceToken = requireToken(TokenType.OPERATOR_OPEN_BRACE)
         val properties = mutableListOf<PropertyAssignment>()
-        if (!isToken(TokenType.CLOSE_BRACE)) {
+        if (!isToken(TokenType.OPERATOR_CLOSE_BRACE)) {
             properties.add(parsePropertyAssignment())
         }
-        while (isToken(TokenType.COMMA)) {
-            requireToken(TokenType.COMMA)
-            if (!isToken(TokenType.CLOSE_BRACE)) {
+        while (isToken(TokenType.OPERATOR_COMMA)) {
+            requireToken(TokenType.OPERATOR_COMMA)
+            if (!isToken(TokenType.OPERATOR_CLOSE_BRACE)) {
                 properties.add(parsePropertyAssignment())
             }
         }
-        val closeBraceToken = requireToken(TokenType.CLOSE_BRACE)
+        val closeBraceToken = requireToken(TokenType.OPERATOR_CLOSE_BRACE)
         return ObjectLiteralExpression(openBraceToken, properties, closeBraceToken)
     }
 
@@ -812,16 +814,16 @@ class Parser(private val lexer: Lexer) {
             ) -> {
                 IdentifierPropertyName(eatToken())
             }
-            isToken(TokenType.OPEN_BRACKET) -> parseComputedPropertyName()
+            isToken(TokenType.OPERATOR_OPEN_BRACKET) -> parseComputedPropertyName()
             isKeyword(lexer.currentToken.type) -> IdentifierPropertyName(eatToken())
             else -> throw IllegalStateException("Unexpected token: " + lexer.currentToken)
         }
     }
 
     private fun parseComputedPropertyName(): ComputedPropertyName {
-        val openBracketToken = requireToken(TokenType.OPEN_BRACKET)
+        val openBracketToken = requireToken(TokenType.OPERATOR_OPEN_BRACKET)
         val expression = parseSingleExpression()
-        val closeBracketToken = requireToken(TokenType.CLOSE_BRACKET)
+        val closeBracketToken = requireToken(TokenType.OPERATOR_CLOSE_BRACKET)
         return ComputedPropertyName(openBracketToken, expression, closeBracketToken)
     }
 
@@ -900,9 +902,9 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseParenthesizedExpression(): ParenthesizedExpression {
-        requireToken(TokenType.OPEN_PAREN)
+        requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val expressionSequence = parseExpressionSequence()
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
         return ParenthesizedExpression(expressionSequence)
     }
 
@@ -914,9 +916,9 @@ class Parser(private val lexer: Lexer) {
         }
 
         // 解析参数列表
-        requireToken(TokenType.OPEN_PAREN)
+        requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val parameters = parseFormalParameterList()
-        requireToken(TokenType.CLOSE_PAREN)
+        requireToken(TokenType.OPERATOR_CLOSE_PAREN)
 
         // 解析函数体
         val body = parseFunctionBody()
@@ -927,7 +929,7 @@ class Parser(private val lexer: Lexer) {
     private fun parseNewExpression(): NewExpression {
         val newToken = requireToken(TokenType.KEYWORD_NEW)
         val expression = parseSingleExpression()
-        val arguments = if (isToken(TokenType.OPEN_PAREN)) {
+        val arguments = if (isToken(TokenType.OPERATOR_OPEN_PAREN)) {
              parseArguments()
         } else {
             null
@@ -1001,7 +1003,7 @@ class Parser(private val lexer: Lexer) {
     private fun parseExpressionSequence(): ExpressionSequence {
         val expressions = mutableListOf<SingleExpression>()
         expressions.add(parseSingleExpression())
-        while (lexer.currentToken.type == TokenType.COMMA) {
+        while (lexer.currentToken.type == TokenType.OPERATOR_COMMA) {
             expressions.add(parseSingleExpression())
         }
         return ExpressionSequence(expressions)
@@ -1036,11 +1038,11 @@ class Parser(private val lexer: Lexer) {
 
     private fun isStatementLeaderToken(tokenType: TokenType): Boolean {
         when (tokenType) {
-            TokenType.OPEN_BRACE,
+            TokenType.OPERATOR_OPEN_BRACE,
             TokenType.KEYWORD_VAR,
             TokenType.KEYWORD_IMPORT,
             TokenType.KEYWORD_EXPORT,
-            TokenType.SEMICOLON,
+            TokenType.OPERATOR_SEMICOLON,
             TokenType.KEYWORD_CLASS,
             TokenType.KEYWORD_FUNCTION,
             TokenType.KEYWORD_IF,
@@ -1081,10 +1083,13 @@ class Parser(private val lexer: Lexer) {
             TokenType.KEYWORD_THIS,
             TokenType.IDENTIFIER,
             TokenType.KEYWORD_SUPER,
-            TokenType.LITERAL,
-            TokenType.OPEN_BRACKET,
-            TokenType.OPEN_BRACE,
-            TokenType.OPEN_PAREN -> return true
+            TokenType.NULL_LITERAL,
+            TokenType.BOOLEAN_LITERAL,
+            TokenType.NUMBER_LITERAL,
+            TokenType.STRING_LITERAL,
+            TokenType.OPERATOR_OPEN_BRACKET,
+            TokenType.OPERATOR_OPEN_BRACE,
+            TokenType.OPERATOR_OPEN_PAREN -> return true
             else -> return false
         }
     }
