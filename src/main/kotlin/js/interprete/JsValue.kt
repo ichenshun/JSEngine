@@ -6,6 +6,10 @@ enum class ValueType {
 }
 
 data class JsValue(val valueType: ValueType, val value: Any) {
+    companion object {
+        val UNDEFINED = JsValue(ValueType.UNDEFINED, 0)
+    }
+
     fun toBoolean(): Boolean {
         return when (valueType) {
             ValueType.NUMBER -> (value as Number) != 0.0
@@ -27,8 +31,13 @@ data class JsValue(val valueType: ValueType, val value: Any) {
         }
     }
 
-    companion object{
-        val UNDEFINED = JsValue(ValueType.UNDEFINED, 0)
+    fun toDisplayString(): String {
+        return when (valueType) {
+            ValueType.NUMBER, ValueType.STRING, ValueType.BOOLEAN -> value.toString()
+            ValueType.NULL -> "null"
+            ValueType.UNDEFINED -> "undefined"
+            else -> throw IllegalStateException("Cannot convert $valueType to String")
+        }
     }
 }
 

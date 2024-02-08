@@ -615,9 +615,7 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseAdditiveExpression(): SingleExpression {
         var leftExpression = parseMultiplicativeExpression()
-        while (lexer.currentToken.type == TokenType.OPERATOR_PLUS
-            || lexer.currentToken.type == TokenType.OPERATOR_MINUS
-        ) {
+        while (isToken(TokenType.OPERATOR_PLUS, TokenType.OPERATOR_MINUS)) {
             val operator = requireToken(TokenType.OPERATOR_PLUS, TokenType.OPERATOR_MINUS)
             val rightExpression = parseMultiplicativeExpression()
             leftExpression = AdditiveExpression(leftExpression, operator, rightExpression)
@@ -654,7 +652,7 @@ class Parser(private val lexer: Lexer) {
 
     private fun parsePostDecreaseExpression(): SingleExpression {
         var leftExpression = parsePostIncrementExpression()
-        while (lexer.currentToken.type == TokenType.OPERATOR_MINUS_MINUS) {
+        while (isToken(TokenType.OPERATOR_MINUS_MINUS)) {
             val operator = requireToken(TokenType.OPERATOR_MINUS_MINUS)
             leftExpression = PostDecreaseExpression(leftExpression, operator)
         }
@@ -663,7 +661,7 @@ class Parser(private val lexer: Lexer) {
 
     private fun parsePostIncrementExpression(): SingleExpression {
         var leftExpression = parseArgumentsExpression()
-        while (lexer.currentToken.type == TokenType.OPERATOR_PLUS_PLUS) {
+        while (isToken(TokenType.OPERATOR_PLUS_PLUS)) {
             val operator = requireToken(TokenType.OPERATOR_PLUS_PLUS)
             leftExpression = PostIncrementExpression(leftExpression, operator)
         }
@@ -672,18 +670,18 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseArgumentsExpression(): SingleExpression {
         var leftExpression = parseMemberDotExpression()
-        while (lexer.currentToken.type == TokenType.OPERATOR_OPEN_PAREN) {
-            leftExpression = ArgumentsExpression(leftExpression, parseArguments())
+        while (isToken(TokenType.OPERATOR_OPEN_PAREN)) {
+            leftExpression = ArgumentsExpression(leftExpression, parseArgumentList())
         }
         return leftExpression
     }
 
-    private fun parseArguments(): Arguments {
+    private fun parseArgumentList(): ArgumentList {
         requireToken(TokenType.OPERATOR_OPEN_PAREN)
         val arguments = mutableListOf<Argument>()
-        if (lexer.currentToken.type != TokenType.OPERATOR_CLOSE_PAREN) {
+        if (!isToken(TokenType.OPERATOR_CLOSE_PAREN)) {
             arguments.add(parseArgument())
-            while (lexer.currentToken.type == TokenType.OPERATOR_COMMA) {
+            while (isToken(TokenType.OPERATOR_COMMA)) {
                 requireToken(TokenType.OPERATOR_COMMA)
                 if (lexer.currentToken.type != TokenType.OPERATOR_CLOSE_PAREN) {
                     arguments.add(parseArgument())
@@ -693,19 +691,17 @@ class Parser(private val lexer: Lexer) {
             }
         }
         requireToken(TokenType.OPERATOR_CLOSE_PAREN)
-        return Arguments(arguments)
+        return ArgumentList(arguments)
     }
 
     private fun parseArgument(): Argument {
-        val ellipse = if (lexer.currentToken.type == TokenType.OPERATOR_ELLIPSIS) lexer.currentToken else null
+        val ellipse = if (isToken(TokenType.OPERATOR_ELLIPSIS)) lexer.currentToken else null
         return Argument(ellipse, parseSingleExpression())
     }
 
     private fun parseMemberDotExpression(): SingleExpression {
         var leftExpression = parseMemberIndexExpression()
-        while (lexer.currentToken.type == TokenType.OPERATOR_QUESTION_MARK ||
-            lexer.currentToken.type == TokenType.OPERATOR_DOT
-        ) {
+        while (isToken(TokenType.OPERATOR_QUESTION_MARK, TokenType.OPERATOR_DOT)) {
             val questionToke =
                 if (isToken(TokenType.OPERATOR_QUESTION_MARK)) requireToken(TokenType.OPERATOR_QUESTION_MARK) else null
             val dotToken = requireToken(TokenType.OPERATOR_DOT)
@@ -719,8 +715,7 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseMemberIndexExpression(): SingleExpression {
         var leftExpression = parseOptionalChainExpression()
-        while (lexer.currentToken.type == TokenType.OPERATOR_QUESTION_MARK_DOT ||
-            lexer.currentToken.type == TokenType.OPERATOR_OPEN_BRACKET) {
+        while (isToken(TokenType.OPERATOR_QUESTION_MARK_DOT, TokenType.OPERATOR_OPEN_BRACKET)) {
             val questionDotToken = if (lexer.currentToken.type == TokenType.OPERATOR_QUESTION_MARK_DOT)
                 requireToken(TokenType.OPERATOR_QUESTION_MARK_DOT) else null
             val openBracket = requireToken(TokenType.OPERATOR_OPEN_BRACKET)
@@ -739,7 +734,7 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseOptionalChainExpression(): SingleExpression {
         var leftExpression = parseAtomSingleExpression()
-        while (lexer.currentToken.type == TokenType.OPERATOR_QUESTION_MARK_DOT) {
+        while (isToken(TokenType.OPERATOR_QUESTION_MARK_DOT)) {
             val questionDotToken = requireToken(TokenType.OPERATOR_QUESTION_MARK_DOT)
             val rightExpression = parseAtomSingleExpression()
             leftExpression = OptionalChainExpression(leftExpression, questionDotToken, rightExpression)
@@ -930,7 +925,7 @@ class Parser(private val lexer: Lexer) {
         val newToken = requireToken(TokenType.KEYWORD_NEW)
         val expression = parseSingleExpression()
         val arguments = if (isToken(TokenType.OPERATOR_OPEN_PAREN)) {
-             parseArguments()
+             parseArgumentList()
         } else {
             null
         }

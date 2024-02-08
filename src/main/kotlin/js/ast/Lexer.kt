@@ -209,10 +209,12 @@ class Lexer(private val stream: CharStream) {
     }
 
     private fun parseStringLiteralToken(leadChar: Char): Token {
+        // 跳过""字符
+        stream.nextChar()
         stream.mark()
-        do {
+        while (stream.currentChar != leadChar) {
             stream.nextChar()
-        } while (stream.currentChar != leadChar)
+        }
 //        {
 
 //            val char = stream.currentChar
@@ -225,8 +227,9 @@ class Lexer(private val stream: CharStream) {
             // 需要考虑连接行
             // 需要考虑转义字符
 //        }
+        val substring = stream.substring()
         stream.nextChar()
-        return Token(TokenType.STRING_LITERAL, stream.substring())
+        return Token(TokenType.STRING_LITERAL, substring)
     }
 
     private fun skipWhitespaceChars() {

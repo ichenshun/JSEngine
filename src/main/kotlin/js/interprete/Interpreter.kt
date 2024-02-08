@@ -5,6 +5,7 @@ import kotlin.math.pow
 
 
 class Interpreter {
+    private val builtInJsObject = BuiltInJsObject()
     private val variablesMap = mutableMapOf<String, JsValue>()
 
     fun evaluate(node: Node): JsValue {
@@ -184,7 +185,7 @@ class Interpreter {
             is YieldExpression -> return evaluateYieldExpression(this)
             is ThisExpression -> return evaluateThisExpression(this)
             // TODO 同名的变量覆盖问题
-            is IdentifierExpression -> return variablesMap[name.value]?:JsValue.UNDEFINED
+            is IdentifierExpression -> return evaluateIdentifierExpression(this)
             is SuperExpression ->  return evaluateSuperExpression(this)
             is LiteralExpression ->  return evaluateLiteralExpression(this)
             is StringLiteralExpression -> return JsValue(ValueType.STRING, value.value)
@@ -195,6 +196,14 @@ class Interpreter {
             is ParenthesizedExpression -> return evaluateParenthesizedExpression(this)
             else -> throw RuntimeException("Unsupported expression: $this")
         }
+    }
+
+    private fun evaluateIdentifierExpression(identifierExpression: IdentifierExpression): JsValue {
+        val builtInJsObject = builtInJsObject.get(identifierExpression.name.value)
+        if (builtInJsObject != null) {
+            return JsValue(ValueType.OBJECT, builtInJsObject)
+        }
+        return variablesMap[identifierExpression.name.value] ?: JsValue.UNDEFINED
     }
 
     private fun evaluateFunctionExpression(functionExpression: FunctionExpression): JsValue {
@@ -211,11 +220,14 @@ class Interpreter {
 
     private fun evaluateMemberDotExpression(memberDotExpression: MemberDotExpression): JsValue {
         val value = memberDotExpression.expression.evaluate()
+        if (value.valueType != ValueType.OBJECT) {
+            throw RuntimeException("Member access on non-object: $value")
+        }
+        val jsObject = value.value as JsObject
         // 执行属性访问
         // 查找对象表，找到属性对应的值
         // 返回属性对应的值
-//        return variablesMap[value] ?: 0.0
-        return JsValue.UNDEFINED
+        return jsObject.get(memberDotExpression.identifier.value)
     }
 
     private fun evaluateNewExpression(newExpression: NewExpression): JsValue {
@@ -224,9 +236,13 @@ class Interpreter {
 
     private fun evaluateArgumentsExpression(argumentsExpression: ArgumentsExpression): JsValue {
         val value = argumentsExpression.expression.evaluate()
+        if (value.valueType != ValueType.FUNCTION) {
+            throw RuntimeException("Cannot call non-function: $value")
+        }
         // 执行函数调用
-        argumentsExpression.arguments.arguments.forEach { it.expression.evaluate() }
-        return value
+        val argumentList = argumentsExpression.argumentList.arguments.map { it.expression.evaluate() }
+        val jsFunction = value.value as JsFunction
+        return jsFunction.call(argumentList)
     }
 
     private fun evaluatePostIncrementExpression(postIncrementExpression: PostIncrementExpression): JsValue {

@@ -47,4 +47,13 @@ fun main() {
         }
     """
     println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
+
+    code = "console.log(\"hello js\")"
+    println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
+
+    code = """
+        var a=123
+        console.log(a)
+    """
+    println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
 }

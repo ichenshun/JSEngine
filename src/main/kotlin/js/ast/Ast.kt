@@ -246,7 +246,7 @@ data class FunctionExpression(
 data class NewExpression(
     val newToken: Token,
     val expression: SingleExpression,
-    val arguments: Arguments?
+    val arguments: ArgumentList?
 ) : SingleExpression()
 
 data class DeleteExpression(
@@ -281,10 +281,10 @@ data class PostDecreaseExpression(
 
 data class ArgumentsExpression(
     val expression: SingleExpression,
-    val arguments: Arguments
+    val argumentList: ArgumentList
 ) : SingleExpression()
 
-data class Arguments(
+data class ArgumentList(
     val arguments: List<Argument>
 )
 
