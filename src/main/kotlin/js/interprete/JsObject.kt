@@ -18,7 +18,6 @@ class Console : JsObject() {
     }
 
     private fun log(arguments: List<JsValue>): JsValue {
-        val a= arguments.joinToString(separator = " ") { it.toDisplayString() }
         println(arguments.joinToString(separator = " ") { it.toDisplayString() })
         return JsValue.UNDEFINED
     }

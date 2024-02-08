@@ -56,4 +56,10 @@ fun main() {
         console.log(a)
     """
     println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
+
+    code = """
+        var name = "Bob"
+        console.log(1>2, name, 123, "abc")
+    """
+    println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
 }
