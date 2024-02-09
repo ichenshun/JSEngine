@@ -3,8 +3,8 @@ package js.interprete
 
 class BuiltInJsObject {
 
-    fun register(variablesMap: MutableMap<String, JsValue>) {
-        variablesMap["console"] = JsValue(ValueType.OBJECT, Console())
+    fun register(context: JsExecutionContext) {
+        context.setVariable("console", JsValue(ValueType.OBJECT, Console()))
     }
 
 }

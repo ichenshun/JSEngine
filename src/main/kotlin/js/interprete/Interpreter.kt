@@ -109,7 +109,7 @@ class Interpreter {
     private fun evaluateFunctionDeclaration(context: JsExecutionContext, functionDeclaration: FunctionDeclaration): JsValue {
         println(functionDeclaration)
         val value = JsValue(ValueType.FUNCTION, JsFunctionCustom(functionDeclaration))
-        context.variables[functionDeclaration.functionName.value] = value
+        context.setVariable(functionDeclaration.functionName.value, value)
         return value
     }
 
@@ -141,8 +141,7 @@ class Interpreter {
 
     private fun evaluateVariableStatement(context: JsExecutionContext, statement: VariableStatement): JsValue {
         statement.variableDeclarationList.variableDeclarations.forEach {
-            // TODO 同名的变量覆盖问题
-            context.variables[it.variableName.value] = it.initializer?.evaluate(context) ?: JsValue.UNDEFINED
+            context.setVariable(it.variableName.value, it.initializer?.evaluate(context) ?: JsValue.UNDEFINED)
         }
         return JsValue.UNDEFINED
     }
@@ -204,7 +203,7 @@ class Interpreter {
     }
 
     private fun evaluateIdentifierExpression(context: JsExecutionContext, identifierExpression: IdentifierExpression): JsValue {
-        return context.variables[identifierExpression.name.value] ?: JsValue.UNDEFINED
+        return context.getVariable(identifierExpression.name.value)
     }
 
     private fun evaluateFunctionExpression(context: JsExecutionContext, functionExpression: FunctionExpression): JsValue {
@@ -243,7 +242,7 @@ class Interpreter {
         // 执行函数调用
         val argumentList = argumentsExpression.argumentList.arguments.map { it.expression.evaluate(context) }
         val jsFunction = value.value as JsFunction
-        return jsFunction.call(this, argumentList)
+        return jsFunction.call(context,this, argumentList)
     }
 
     private fun evaluatePostIncrementExpression(context: JsExecutionContext, postIncrementExpression: PostIncrementExpression): JsValue {

@@ -9,12 +9,6 @@ import js.interprete.JsExecutionContext
 import js.interprete.JsValue
 
  class Engine {
-    private val executionContext: JsExecutionContext
-    init {
-        val variables = mutableMapOf<String, JsValue>()
-        BuiltInJsObject().register(variables)
-        executionContext = JsExecutionContext(variables)
-    }
 
     fun evaluate(code: String): JsValue {
         val stream = CharStream(code)
@@ -22,6 +16,7 @@ import js.interprete.JsValue
         val tree = parser.parse()
         println(tree)
         val interpreter = Interpreter()
-        return interpreter.evaluate(executionContext, tree)
+        // TODO 不同Engine实例的全局上下文应该分开
+        return interpreter.evaluate(JsExecutionContext.globalContext, tree)
     }
 }
