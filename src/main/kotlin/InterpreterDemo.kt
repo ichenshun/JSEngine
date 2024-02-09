@@ -94,4 +94,21 @@ fun main() {
         console.log(c)
     """
     println("code:\n$code\nresult\n${Engine().evaluate(code)}\n")
+
+    code = """
+        var factor = 120
+        function minus(a, b) {
+            return a - b - factor
+        }
+        function add(a, b) {
+            return a + b + factor
+        }
+        function test(a, b) {
+            var c = a+b
+            return add(a, c) + minus(a, b)
+            console.log(c)
+        }
+        console.log(test(50, 200))
+    """
+    println("code:\n$code\nresult\n${Engine().evaluate(code)}\n")
 }

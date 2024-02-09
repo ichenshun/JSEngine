@@ -17,9 +17,14 @@ class Interpreter {
         return evaluateStatementList(context, program.statementList)
     }
 
-    private fun evaluateStatementList(context: JsExecutionContext, statement: StatementList): JsValue {
+    private fun evaluateStatementList(context: JsExecutionContext, statementList: StatementList): JsValue {
         var value = JsValue.UNDEFINED
-        statement.statements.forEach { value = evaluateStatement(context, it) }
+        for (statement in statementList.statements) {
+            value = evaluateStatement(context, statement)
+            if (statement is ReturnStatement) {
+                break
+            }
+        }
         return value
     }
 
