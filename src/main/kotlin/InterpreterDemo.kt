@@ -62,4 +62,20 @@ fun main() {
         console.log(1>2, name, 123, "abc")
     """
     println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
+
+    code = """
+        function add(a, b) {
+            return a + b
+        }
+        console.log(add(1, 2))
+    """
+    println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
+
+    code = """
+        function add(a, b) {
+            return a + b
+        }
+        console.log(add(52, 2))
+    """
+    println("code:\n$code\nresult\n${engine.evaluate(code)}\n")
 }
