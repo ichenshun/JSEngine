@@ -10,7 +10,7 @@ open class Object {
 class Console : Object() {
     private val properties = mutableMapOf<String, Value>()
     init {
-        properties["log"]= Value(ValueType.FUNCTION, JsFunctionNative(this::log))
+        properties["log"]= Value(ValueType.FUNCTION, FunctionNative(this::log))
     }
 
     override fun get(name: String): Value {

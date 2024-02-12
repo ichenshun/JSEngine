@@ -749,8 +749,8 @@ class Parser(private val lexer: Lexer) {
             TokenType.KEYWORD_DELETE -> return parseDeleteExpression()
             TokenType.KEYWORD_VOID -> return parseVoidExpression()
             TokenType.KEYWORD_TYPEOF -> return parseTypeofExpression()
-            TokenType.OPERATOR_INCREMENT -> return parsePreIncrementExpression()
-            TokenType.OPERATOR_DECREMENT -> return parsePreDecreaseExpression()
+            TokenType.OPERATOR_PLUS_PLUS -> return parsePreIncrementExpression()
+            TokenType.OPERATOR_MINUS_MINUS -> return parsePreDecreaseExpression()
             TokenType.OPERATOR_PLUS -> return parseUnaryPlusExpression()
             TokenType.OPERATOR_MINUS -> return parseUnaryMinusExpression()
             TokenType.OPERATOR_BIT_NOT -> return parseBitNotExpression()
@@ -951,13 +951,13 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parsePreIncrementExpression(): PreIncrementExpression {
-        requireToken(TokenType.OPERATOR_INCREMENT)
+        requireToken(TokenType.OPERATOR_PLUS_PLUS)
         val expression = parseSingleExpression()
         return PreIncrementExpression(expression)
     }
 
     private fun parsePreDecreaseExpression(): PreDecreaseExpression {
-        requireToken(TokenType.OPERATOR_DECREMENT)
+        requireToken(TokenType.OPERATOR_MINUS_MINUS)
         val expression = parseSingleExpression()
         return PreDecreaseExpression(expression)
     }
@@ -1066,8 +1066,8 @@ class Parser(private val lexer: Lexer) {
             TokenType.KEYWORD_DELETE,
             TokenType.KEYWORD_VOID,
             TokenType.KEYWORD_TYPEOF,
-            TokenType.OPERATOR_INCREMENT,
-            TokenType.OPERATOR_DECREMENT,
+            TokenType.OPERATOR_PLUS_PLUS,
+            TokenType.OPERATOR_MINUS_MINUS,
             TokenType.OPERATOR_PLUS,
             TokenType.OPERATOR_MINUS,
             TokenType.OPERATOR_BIT_NOT,

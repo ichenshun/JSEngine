@@ -111,4 +111,16 @@ fun main() {
         console.log(test(50, 200))
     """
     println("code:\n$code\nresult\n${Engine().evaluate(code)}\n")
+
+    code = """
+        var factor = 120
+        console.log(factor)
+        console.log(factor++)
+        console.log(++factor)
+        var vv = 1
+        console.log(vv)
+        console.log(vv--)
+        console.log(--vv)
+    """
+    println("code:\n$code\nresult\n${Engine().evaluate(code)}\n")
 }

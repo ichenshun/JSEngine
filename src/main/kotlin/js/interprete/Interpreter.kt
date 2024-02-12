@@ -113,7 +113,7 @@ class Interpreter {
 
     private fun evaluateFunctionDeclaration(context: ExecutionContext, functionDeclaration: FunctionDeclaration): Value {
         println(functionDeclaration)
-        val value = Value(ValueType.FUNCTION, JsFunctionCustom(functionDeclaration))
+        val value = Value(ValueType.FUNCTION, FunctionCustom(functionDeclaration))
         context.setVariable(functionDeclaration.functionName.value, value)
         return value
     }
@@ -228,11 +228,11 @@ class Interpreter {
         if (value.valueType != ValueType.OBJECT) {
             throw RuntimeException("Member access on non-object: $value")
         }
-        val `object` = value.value as Object
+        val jsObject = value.value as Object
         // 执行属性访问
         // 查找对象表，找到属性对应的值
         // 返回属性对应的值
-        return `object`.get(memberDotExpression.identifier.value)
+        return jsObject.get(memberDotExpression.identifier.value)
     }
 
     private fun evaluateNewExpression(context: ExecutionContext, newExpression: NewExpression): Value {
@@ -246,16 +246,59 @@ class Interpreter {
         }
         // 执行函数调用
         val argumentList = argumentsExpression.argumentList.arguments.map { it.expression.evaluate(context) }
-        val jsFunction = value.value as JsFunction
-        return jsFunction.call(context,this, argumentList)
+        val function = value.value as Function
+        return function.call(context,this, argumentList)
     }
 
     private fun evaluatePostIncrementExpression(context: ExecutionContext, postIncrementExpression: PostIncrementExpression): Value {
-        TODO("Not yet implemented")
+        when (postIncrementExpression.expression) {
+            is IdentifierExpression -> {
+                val value = postIncrementExpression.expression.evaluate(context)
+                context.setVariable(postIncrementExpression.expression.name.value, Value(ValueType.NUMBER, value.toDouble() + 1))
+                return value
+            }
+            else ->
+                throw RuntimeException("Cannot increment non-variable: ${postIncrementExpression.expression}")
+        }
+
     }
 
     private fun evaluatePostDecreaseExpression(context: ExecutionContext, postDecreaseExpression: PostDecreaseExpression): Value {
-        TODO("Not yet implemented")
+        when (postDecreaseExpression.expression) {
+            is IdentifierExpression -> {
+                val value = postDecreaseExpression.expression.evaluate(context)
+                context.setVariable(postDecreaseExpression.expression.name.value, Value(ValueType.NUMBER, value.toDouble() - 1))
+                return value
+            }
+            else ->
+                throw RuntimeException("Cannot increment non-variable: ${postDecreaseExpression.expression}")
+        }
+    }
+
+    private fun evaluatePreIncrementExpression(context: ExecutionContext, preIncrementExpression: PreIncrementExpression): Value {
+        when (preIncrementExpression.expression) {
+            is IdentifierExpression -> {
+                val value = preIncrementExpression.expression.evaluate(context)
+                val incrementValue = Value(ValueType.NUMBER, value.toDouble() + 1)
+                context.setVariable(preIncrementExpression.expression.name.value, incrementValue)
+                return incrementValue
+            }
+            else ->
+                throw RuntimeException("Cannot increment non-variable: ${preIncrementExpression.expression}")
+        }
+    }
+
+    private fun evaluatePreDecreaseExpression(context: ExecutionContext, preDecreaseExpression: PreDecreaseExpression): Value {
+        when (preDecreaseExpression.expression) {
+            is IdentifierExpression -> {
+                val value = preDecreaseExpression.expression.evaluate(context)
+                val incrementValue = Value(ValueType.NUMBER, value.toDouble() - 1)
+                context.setVariable(preDecreaseExpression.expression.name.value, incrementValue)
+                return incrementValue
+            }
+            else ->
+                throw RuntimeException("Cannot increment non-variable: ${preDecreaseExpression.expression}")
+        }
     }
 
     private fun evaluateDeleteExpression(context: ExecutionContext, deleteExpression: DeleteExpression): Value {
@@ -270,13 +313,6 @@ class Interpreter {
         TODO("Not yet implemented")
     }
 
-    private fun evaluatePreIncrementExpression(context: ExecutionContext, preIncrementExpression: PreIncrementExpression): Value {
-        TODO("Not yet implemented")
-    }
-
-    private fun evaluatePreDecreaseExpression(context: ExecutionContext, preDecreaseExpression: PreDecreaseExpression): Value {
-        TODO("Not yet implemented")
-    }
 
     private fun evaluateUnaryPlusExpression(context: ExecutionContext, unaryPlusExpression: UnaryPlusExpression): Value {
         TODO("Not yet implemented")

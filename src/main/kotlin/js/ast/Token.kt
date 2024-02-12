@@ -158,12 +158,6 @@ enum class TokenType {
     OPERATOR_COMMA,
     OPERATOR_COLON,
 
-    // ++
-    OPERATOR_INCREMENT,
-
-    // --
-    OPERATOR_DECREMENT,
-
     // +
     OPERATOR_PLUS,
 
