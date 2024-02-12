@@ -1,26 +1,26 @@
 package js.interprete
 
-class JsExecutionContext {
-    private val variables = mutableMapOf<String, JsValue>()
+class ExecutionContext {
+    private val variables = mutableMapOf<String, Value>()
 
     fun initGlobalContext() {
 
     }
 
-    fun getVariable(name: String): JsValue {
+    fun getVariable(name: String): Value {
         return variables[name]?: globalContext.variables[name]?: throw RuntimeException("Variable '$name' not found")
     }
 
-    fun setVariable(name: String, value: JsValue) {
+    fun setVariable(name: String, value: Value) {
         variables[name] = value
     }
 
     fun removeVariable(name: String) = variables.remove(name)
 
     companion object {
-        val globalContext = JsExecutionContext()
+        val globalContext = ExecutionContext()
         init {
-            BuiltInJsObject().register(globalContext)
+            BuiltInObject().register(globalContext)
         }
     }
 }

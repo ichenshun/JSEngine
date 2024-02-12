@@ -6,19 +6,19 @@ import kotlin.math.pow
 
 class Interpreter {
     // 全局的英文
-    fun evaluate(context: JsExecutionContext, node: Node): JsValue {
+    fun evaluate(context: ExecutionContext, node: Node): Value {
         return when (node) {
             is Program -> return evaluateProgram(context, node)
-            else -> JsValue.UNDEFINED
+            else -> Value.UNDEFINED
         }
     }
 
-    private fun evaluateProgram(context: JsExecutionContext, program: Program): JsValue {
+    private fun evaluateProgram(context: ExecutionContext, program: Program): Value {
         return evaluateStatementList(context, program.statementList)
     }
 
-    private fun evaluateStatementList(context: JsExecutionContext, statementList: StatementList): JsValue {
-        var value = JsValue.UNDEFINED
+    private fun evaluateStatementList(context: ExecutionContext, statementList: StatementList): Value {
+        var value = Value.UNDEFINED
         for (statement in statementList.statements) {
             value = evaluateStatement(context, statement)
             if (statement is ReturnStatement) {
@@ -28,7 +28,7 @@ class Interpreter {
         return value
     }
 
-    private fun evaluateStatement(context: JsExecutionContext, statement: Statement): JsValue {
+    private fun evaluateStatement(context: ExecutionContext, statement: Statement): Value {
         return when (statement) {
             is Block -> evaluateBlock(context, statement)
             is VariableStatement -> evaluateVariableStatement(context, statement)
@@ -54,104 +54,104 @@ class Interpreter {
         }
     }
 
-    private fun evaluateDebuggerStatement(context: JsExecutionContext, statement: DebuggerStatement): JsValue {
+    private fun evaluateDebuggerStatement(context: ExecutionContext, statement: DebuggerStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateTryStatement(context: JsExecutionContext, statement: TryStatement): JsValue {
+    private fun evaluateTryStatement(context: ExecutionContext, statement: TryStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateThrowStatement(context: JsExecutionContext, statement: ThrowStatement): JsValue {
+    private fun evaluateThrowStatement(context: ExecutionContext, statement: ThrowStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateSwitchStatement(context: JsExecutionContext, statement: SwitchStatement): JsValue {
+    private fun evaluateSwitchStatement(context: ExecutionContext, statement: SwitchStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateLabelledStatement(context: JsExecutionContext, statement: LabelledStatement): JsValue {
+    private fun evaluateLabelledStatement(context: ExecutionContext, statement: LabelledStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateWithStatement(context: JsExecutionContext, statement: WithStatement): JsValue {
+    private fun evaluateWithStatement(context: ExecutionContext, statement: WithStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateYieldStatement(context: JsExecutionContext, statement: YieldStatement): JsValue {
+    private fun evaluateYieldStatement(context: ExecutionContext, statement: YieldStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateReturnStatement(context: JsExecutionContext, statement: ReturnStatement): JsValue {
+    private fun evaluateReturnStatement(context: ExecutionContext, statement: ReturnStatement): Value {
         if (statement.expression != null) {
             return statement.expression.evaluate(context)
         }
-        return JsValue.UNDEFINED
+        return Value.UNDEFINED
     }
 
-    private fun evaluateBreakStatement(context: JsExecutionContext, statement: BreakStatement): JsValue {
+    private fun evaluateBreakStatement(context: ExecutionContext, statement: BreakStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateContinueStatement(context: JsExecutionContext, statement: ContinueStatement): JsValue {
+    private fun evaluateContinueStatement(context: ExecutionContext, statement: ContinueStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateIterationStatement(context: JsExecutionContext, statement: IterationStatement): JsValue {
+    private fun evaluateIterationStatement(context: ExecutionContext, statement: IterationStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateIfStatement(context: JsExecutionContext, statement: IfStatement): JsValue {
+    private fun evaluateIfStatement(context: ExecutionContext, statement: IfStatement): Value {
         val value = evaluateExpressionStatement(context, statement.condition)
         if  (value.toBoolean()) {
             return evaluateStatement(context, statement.trueStatement)
         } else if (statement.falseStatement != null) {
             return evaluateStatement(context, statement.falseStatement)
         }
-        return JsValue.UNDEFINED
+        return Value.UNDEFINED
     }
 
-    private fun evaluateFunctionDeclaration(context: JsExecutionContext, functionDeclaration: FunctionDeclaration): JsValue {
+    private fun evaluateFunctionDeclaration(context: ExecutionContext, functionDeclaration: FunctionDeclaration): Value {
         println(functionDeclaration)
-        val value = JsValue(ValueType.FUNCTION, JsFunctionCustom(functionDeclaration))
+        val value = Value(ValueType.FUNCTION, JsFunctionCustom(functionDeclaration))
         context.setVariable(functionDeclaration.functionName.value, value)
         return value
     }
 
-    private fun evaluateExpressionStatement(context: JsExecutionContext, statement: ExpressionStatement): JsValue {
+    private fun evaluateExpressionStatement(context: ExecutionContext, statement: ExpressionStatement): Value {
         return evaluateExpressionSequence(context, statement.expressionSequence)
     }
 
-    private fun evaluateExpressionSequence(context: JsExecutionContext, expressionSequence: ExpressionSequence): JsValue {
-        var value = JsValue.UNDEFINED
+    private fun evaluateExpressionSequence(context: ExecutionContext, expressionSequence: ExpressionSequence): Value {
+        var value = Value.UNDEFINED
         expressionSequence.expressions.forEach { value = it.evaluate(context) }
         return value
     }
 
-    private fun evaluateClassDeclaration(context: JsExecutionContext, statement: ClassDeclaration): JsValue {
+    private fun evaluateClassDeclaration(context: ExecutionContext, statement: ClassDeclaration): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateEmptyStatement(context: JsExecutionContext, statement: EmptyStatement): JsValue {
-        return JsValue.UNDEFINED
+    private fun evaluateEmptyStatement(context: ExecutionContext, statement: EmptyStatement): Value {
+        return Value.UNDEFINED
     }
 
-    private fun evaluateExportStatement(context: JsExecutionContext, statement: ExportStatement): JsValue {
+    private fun evaluateExportStatement(context: ExecutionContext, statement: ExportStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateImportStatement(context: JsExecutionContext, statement: ImportStatement): JsValue {
+    private fun evaluateImportStatement(context: ExecutionContext, statement: ImportStatement): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateVariableStatement(context: JsExecutionContext, statement: VariableStatement): JsValue {
+    private fun evaluateVariableStatement(context: ExecutionContext, statement: VariableStatement): Value {
         statement.variableDeclarationList.variableDeclarations.forEach {
-            context.setVariable(it.variableName.value, it.initializer?.evaluate(context) ?: JsValue.UNDEFINED)
+            context.setVariable(it.variableName.value, it.initializer?.evaluate(context) ?: Value.UNDEFINED)
         }
-        return JsValue.UNDEFINED
+        return Value.UNDEFINED
     }
 
-    private fun SingleExpression.evaluate(context: JsExecutionContext): JsValue {
+    private fun SingleExpression.evaluate(context: ExecutionContext): Value {
         when (this) {
             is ExpressionSequence -> return evaluateExpressionSequence(context, this)
             is FunctionExpression -> return evaluateFunctionExpression(context, this)
@@ -197,9 +197,9 @@ class Interpreter {
             is IdentifierExpression -> return evaluateIdentifierExpression(context, this)
             is SuperExpression ->  return evaluateSuperExpression(context, this)
             is LiteralExpression ->  return evaluateLiteralExpression(context, this)
-            is StringLiteralExpression -> return JsValue(ValueType.STRING, value.value)
-            is NumericLiteralExpression -> return JsValue(ValueType.NUMBER, value.value.toDouble())
-            is BooleanLiteralExpression -> return JsValue(ValueType.BOOLEAN, value)
+            is StringLiteralExpression -> return Value(ValueType.STRING, value.value)
+            is NumericLiteralExpression -> return Value(ValueType.NUMBER, value.value.toDouble())
+            is BooleanLiteralExpression -> return Value(ValueType.BOOLEAN, value)
             is ArrayLiteralExpression -> return evaluateArrayLiteralExpression(context, this)
             is ObjectLiteralExpression -> return evaluateObjectLiteralExpression(context, this)
             is ParenthesizedExpression -> return evaluateParenthesizedExpression(context, this)
@@ -207,39 +207,39 @@ class Interpreter {
         }
     }
 
-    private fun evaluateIdentifierExpression(context: JsExecutionContext, identifierExpression: IdentifierExpression): JsValue {
+    private fun evaluateIdentifierExpression(context: ExecutionContext, identifierExpression: IdentifierExpression): Value {
         return context.getVariable(identifierExpression.name.value)
     }
 
-    private fun evaluateFunctionExpression(context: JsExecutionContext, functionExpression: FunctionExpression): JsValue {
+    private fun evaluateFunctionExpression(context: ExecutionContext, functionExpression: FunctionExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateOptionalChainExpression(context: JsExecutionContext, optionalChainExpression: OptionalChainExpression): JsValue {
+    private fun evaluateOptionalChainExpression(context: ExecutionContext, optionalChainExpression: OptionalChainExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateMemberIndexExpression(context: JsExecutionContext, memberIndexExpression: MemberIndexExpression): JsValue {
+    private fun evaluateMemberIndexExpression(context: ExecutionContext, memberIndexExpression: MemberIndexExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateMemberDotExpression(context: JsExecutionContext, memberDotExpression: MemberDotExpression): JsValue {
+    private fun evaluateMemberDotExpression(context: ExecutionContext, memberDotExpression: MemberDotExpression): Value {
         val value = memberDotExpression.expression.evaluate(context)
         if (value.valueType != ValueType.OBJECT) {
             throw RuntimeException("Member access on non-object: $value")
         }
-        val jsObject = value.value as JsObject
+        val `object` = value.value as Object
         // 执行属性访问
         // 查找对象表，找到属性对应的值
         // 返回属性对应的值
-        return jsObject.get(memberDotExpression.identifier.value)
+        return `object`.get(memberDotExpression.identifier.value)
     }
 
-    private fun evaluateNewExpression(context: JsExecutionContext, newExpression: NewExpression): JsValue {
+    private fun evaluateNewExpression(context: ExecutionContext, newExpression: NewExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateArgumentsExpression(context: JsExecutionContext, argumentsExpression: ArgumentsExpression): JsValue {
+    private fun evaluateArgumentsExpression(context: ExecutionContext, argumentsExpression: ArgumentsExpression): Value {
         val value = argumentsExpression.expression.evaluate(context)
         if (value.valueType != ValueType.FUNCTION) {
             throw RuntimeException("Cannot call non-function: $value")
@@ -250,206 +250,206 @@ class Interpreter {
         return jsFunction.call(context,this, argumentList)
     }
 
-    private fun evaluatePostIncrementExpression(context: JsExecutionContext, postIncrementExpression: PostIncrementExpression): JsValue {
+    private fun evaluatePostIncrementExpression(context: ExecutionContext, postIncrementExpression: PostIncrementExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluatePostDecreaseExpression(context: JsExecutionContext, postDecreaseExpression: PostDecreaseExpression): JsValue {
+    private fun evaluatePostDecreaseExpression(context: ExecutionContext, postDecreaseExpression: PostDecreaseExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateDeleteExpression(context: JsExecutionContext, deleteExpression: DeleteExpression): JsValue {
+    private fun evaluateDeleteExpression(context: ExecutionContext, deleteExpression: DeleteExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateVoidExpression(context: JsExecutionContext, voidExpression: VoidExpression): JsValue {
+    private fun evaluateVoidExpression(context: ExecutionContext, voidExpression: VoidExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateTypeofExpression(context: JsExecutionContext, typeofExpression: TypeofExpression): JsValue {
+    private fun evaluateTypeofExpression(context: ExecutionContext, typeofExpression: TypeofExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluatePreIncrementExpression(context: JsExecutionContext, preIncrementExpression: PreIncrementExpression): JsValue {
+    private fun evaluatePreIncrementExpression(context: ExecutionContext, preIncrementExpression: PreIncrementExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluatePreDecreaseExpression(context: JsExecutionContext, preDecreaseExpression: PreDecreaseExpression): JsValue {
+    private fun evaluatePreDecreaseExpression(context: ExecutionContext, preDecreaseExpression: PreDecreaseExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateUnaryPlusExpression(context: JsExecutionContext, unaryPlusExpression: UnaryPlusExpression): JsValue {
+    private fun evaluateUnaryPlusExpression(context: ExecutionContext, unaryPlusExpression: UnaryPlusExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateUnaryMinusExpression(context: JsExecutionContext, unaryMinusExpression: UnaryMinusExpression): JsValue {
+    private fun evaluateUnaryMinusExpression(context: ExecutionContext, unaryMinusExpression: UnaryMinusExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateBitNotExpression(context: JsExecutionContext, bitNotExpression: BitNotExpression): JsValue {
+    private fun evaluateBitNotExpression(context: ExecutionContext, bitNotExpression: BitNotExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateNotExpression(context: JsExecutionContext, notExpression: NotExpression): JsValue {
+    private fun evaluateNotExpression(context: ExecutionContext, notExpression: NotExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateAwaitExpression(context: JsExecutionContext, awaitExpression: AwaitExpression): JsValue {
+    private fun evaluateAwaitExpression(context: ExecutionContext, awaitExpression: AwaitExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluatePowerExpression(context: JsExecutionContext, powerExpression: PowerExpression): JsValue {
+    private fun evaluatePowerExpression(context: ExecutionContext, powerExpression: PowerExpression): Value {
         val leftValue = powerExpression.leftExpression.evaluate(context)
         val rightValue = powerExpression.rightExpression.evaluate(context)
         println("left=${leftValue.value}, right=${rightValue.value}")
         return when (powerExpression.operator.type) {
-            TokenType.OPERATOR_POWER -> JsValue(ValueType.NUMBER, leftValue.toDouble().pow(rightValue.toDouble()))
+            TokenType.OPERATOR_POWER -> Value(ValueType.NUMBER, leftValue.toDouble().pow(rightValue.toDouble()))
             else -> throw IllegalArgumentException("Invalid operator: ${powerExpression.operator.type}")
         }
     }
 
-    private fun evaluateMultiplicativeExpression(context: JsExecutionContext, multiplicativeExpression: MultiplicativeExpression): JsValue {
+    private fun evaluateMultiplicativeExpression(context: ExecutionContext, multiplicativeExpression: MultiplicativeExpression): Value {
         val leftValue = multiplicativeExpression.leftExpression.evaluate(context)
         val rightValue = multiplicativeExpression.rightExpression.evaluate(context)
         return when (multiplicativeExpression.operator.type) {
-            TokenType.OPERATOR_MULTIPLY -> JsValue(ValueType.NUMBER, leftValue.toDouble() * rightValue.toDouble())
-            TokenType.OPERATOR_DIVIDE -> JsValue(ValueType.NUMBER, leftValue.toDouble() / rightValue.toDouble())
+            TokenType.OPERATOR_MULTIPLY -> Value(ValueType.NUMBER, leftValue.toDouble() * rightValue.toDouble())
+            TokenType.OPERATOR_DIVIDE -> Value(ValueType.NUMBER, leftValue.toDouble() / rightValue.toDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${multiplicativeExpression.operator.type}")
         }
     }
 
-    private fun evaluateAdditiveExpression(context: JsExecutionContext, additiveExpression: AdditiveExpression): JsValue {
+    private fun evaluateAdditiveExpression(context: ExecutionContext, additiveExpression: AdditiveExpression): Value {
         val leftValue = additiveExpression.leftExpression.evaluate(context)
         val rightValue = additiveExpression.rightExpression.evaluate(context)
         return when (additiveExpression.operator.type) {
-            TokenType.OPERATOR_PLUS -> JsValue(ValueType.NUMBER, leftValue.toDouble() + rightValue.toDouble())
-            TokenType.OPERATOR_MINUS -> JsValue(ValueType.NUMBER, leftValue.toDouble() - rightValue.toDouble())
+            TokenType.OPERATOR_PLUS -> Value(ValueType.NUMBER, leftValue.toDouble() + rightValue.toDouble())
+            TokenType.OPERATOR_MINUS -> Value(ValueType.NUMBER, leftValue.toDouble() - rightValue.toDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${additiveExpression.operator.type}")
         }
     }
 
-    private fun evaluateCoalesceExpression(context: JsExecutionContext, coalesceExpression: CoalesceExpression): JsValue {
+    private fun evaluateCoalesceExpression(context: ExecutionContext, coalesceExpression: CoalesceExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateBitShiftExpression(context: JsExecutionContext, bitShiftExpression: BitShiftExpression): JsValue {
+    private fun evaluateBitShiftExpression(context: ExecutionContext, bitShiftExpression: BitShiftExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateRelationalExpression(context: JsExecutionContext, relationalExpression: RelationalExpression): JsValue {
+    private fun evaluateRelationalExpression(context: ExecutionContext, relationalExpression: RelationalExpression): Value {
         val leftValue = relationalExpression.leftExpression.evaluate(context)
         val rightValue = relationalExpression.rightExpression.evaluate(context)
         return when (relationalExpression.operator.type) {
             TokenType.OPERATOR_LESS_THAN ->
-                JsValue(ValueType.BOOLEAN, leftValue.toDouble() < rightValue.toDouble())
+                Value(ValueType.BOOLEAN, leftValue.toDouble() < rightValue.toDouble())
             TokenType.OPERATOR_MORE_THAN ->
-                JsValue(ValueType.BOOLEAN, leftValue.toDouble() > rightValue.toDouble())
+                Value(ValueType.BOOLEAN, leftValue.toDouble() > rightValue.toDouble())
             TokenType.OPERATOR_LESS_THAN_EQUALS ->
-                JsValue(ValueType.BOOLEAN, leftValue.toDouble() >= rightValue.toDouble())
+                Value(ValueType.BOOLEAN, leftValue.toDouble() >= rightValue.toDouble())
             TokenType.OPERATOR_MORE_THAN_EQUALS ->
-                JsValue(ValueType.BOOLEAN, leftValue.toDouble() <= rightValue.toDouble())
+                Value(ValueType.BOOLEAN, leftValue.toDouble() <= rightValue.toDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${relationalExpression.operator.type}")
         }
     }
 
-    private fun evaluateInstanceOfExpression(context: JsExecutionContext, instanceOfExpression: InstanceOfExpression): JsValue {
+    private fun evaluateInstanceOfExpression(context: ExecutionContext, instanceOfExpression: InstanceOfExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateInExpression(context: JsExecutionContext, inExpression: InExpression): JsValue {
+    private fun evaluateInExpression(context: ExecutionContext, inExpression: InExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateEqualityExpression(context: JsExecutionContext, equalityExpression: EqualityExpression): JsValue {
+    private fun evaluateEqualityExpression(context: ExecutionContext, equalityExpression: EqualityExpression): Value {
         val leftValue = equalityExpression.leftExpression.evaluate(context)
         val rightValue = equalityExpression.rightExpression.evaluate(context)
         return when (equalityExpression.operator.type) {
-            TokenType.OPERATOR_EQUAL -> JsValue(ValueType.BOOLEAN, leftValue == rightValue)
-            TokenType.OPERATOR_NOT_EQUAL -> JsValue(ValueType.BOOLEAN, leftValue != rightValue)
+            TokenType.OPERATOR_EQUAL -> Value(ValueType.BOOLEAN, leftValue == rightValue)
+            TokenType.OPERATOR_NOT_EQUAL -> Value(ValueType.BOOLEAN, leftValue != rightValue)
             // TODO: 处理对象想等
-            TokenType.OPERATOR_IDENTITY_EQUAL -> JsValue(ValueType.BOOLEAN, leftValue === rightValue)
-            TokenType.OPERATOR_IDENTITY_NOT_EQUAL -> JsValue(ValueType.BOOLEAN, leftValue !== rightValue)
+            TokenType.OPERATOR_IDENTITY_EQUAL -> Value(ValueType.BOOLEAN, leftValue === rightValue)
+            TokenType.OPERATOR_IDENTITY_NOT_EQUAL -> Value(ValueType.BOOLEAN, leftValue !== rightValue)
             else -> throw IllegalArgumentException("Invalid operator: ${equalityExpression.operator.type}")
         }
     }
 
-    private fun evaluateBitAndExpression(context: JsExecutionContext, bitAndExpression: BitAndExpression): JsValue {
+    private fun evaluateBitAndExpression(context: ExecutionContext, bitAndExpression: BitAndExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateBitXorExpression(context: JsExecutionContext, bitXorExpression: BitXorExpression): JsValue {
+    private fun evaluateBitXorExpression(context: ExecutionContext, bitXorExpression: BitXorExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateBitOrExpression(context: JsExecutionContext, bitOrExpression: BitOrExpression): JsValue {
+    private fun evaluateBitOrExpression(context: ExecutionContext, bitOrExpression: BitOrExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateLogicalAndExpression(context: JsExecutionContext, logicalAndExpression: LogicalAndExpression): JsValue {
+    private fun evaluateLogicalAndExpression(context: ExecutionContext, logicalAndExpression: LogicalAndExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateLogicalOrExpression(context: JsExecutionContext, logicalOrExpression: LogicalOrExpression): JsValue {
+    private fun evaluateLogicalOrExpression(context: ExecutionContext, logicalOrExpression: LogicalOrExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateTernaryExpression(context: JsExecutionContext, ternaryExpression: TernaryExpression): JsValue {
+    private fun evaluateTernaryExpression(context: ExecutionContext, ternaryExpression: TernaryExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateAssignmentExpression(context: JsExecutionContext, assignmentExpression: AssignmentExpression): JsValue {
+    private fun evaluateAssignmentExpression(context: ExecutionContext, assignmentExpression: AssignmentExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateAssignmentOperatorExpression(context: JsExecutionContext, assignmentOperatorExpression: AssignmentOperatorExpression): JsValue {
+    private fun evaluateAssignmentOperatorExpression(context: ExecutionContext, assignmentOperatorExpression: AssignmentOperatorExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateImportExpression(context: JsExecutionContext, importExpression: ImportExpression): JsValue {
+    private fun evaluateImportExpression(context: ExecutionContext, importExpression: ImportExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateTemplateStringExpression(context: JsExecutionContext, templateStringExpression: TemplateStringExpression): JsValue {
+    private fun evaluateTemplateStringExpression(context: ExecutionContext, templateStringExpression: TemplateStringExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateYieldExpression(context: JsExecutionContext, yieldExpression: YieldExpression): JsValue {
+    private fun evaluateYieldExpression(context: ExecutionContext, yieldExpression: YieldExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateThisExpression(context: JsExecutionContext, thisExpression: ThisExpression): JsValue {
+    private fun evaluateThisExpression(context: ExecutionContext, thisExpression: ThisExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateSuperExpression(context: JsExecutionContext, superExpression: SuperExpression): JsValue {
+    private fun evaluateSuperExpression(context: ExecutionContext, superExpression: SuperExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateLiteralExpression(context: JsExecutionContext, literalExpression: LiteralExpression): JsValue {
+    private fun evaluateLiteralExpression(context: ExecutionContext, literalExpression: LiteralExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateArrayLiteralExpression(context: JsExecutionContext, arrayLiteralExpression: ArrayLiteralExpression): JsValue {
+    private fun evaluateArrayLiteralExpression(context: ExecutionContext, arrayLiteralExpression: ArrayLiteralExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateObjectLiteralExpression(context: JsExecutionContext, objectLiteralExpression: ObjectLiteralExpression): JsValue {
+    private fun evaluateObjectLiteralExpression(context: ExecutionContext, objectLiteralExpression: ObjectLiteralExpression): Value {
         TODO("Not yet implemented")
     }
 
-    private fun evaluateParenthesizedExpression(context: JsExecutionContext, parenthesizedExpression: ParenthesizedExpression): JsValue {
+    private fun evaluateParenthesizedExpression(context: ExecutionContext, parenthesizedExpression: ParenthesizedExpression): Value {
         return parenthesizedExpression.expressionSequence.evaluate(context)
     }
 
-    private fun evaluateBlock(context: JsExecutionContext, statement: Block): JsValue {
+    private fun evaluateBlock(context: ExecutionContext, statement: Block): Value {
         return evaluateStatementList(context, statement.statementList)
     }
 
-    private fun evaluateWhileStatement(context: JsExecutionContext, statement: WhileStatement) {
+    private fun evaluateWhileStatement(context: ExecutionContext, statement: WhileStatement) {
         TODO("Not yet implemented")
     }
 
-    fun evaluateFunctionBody(context: JsExecutionContext, functionBody: FunctionBody): JsValue {
+    fun evaluateFunctionBody(context: ExecutionContext, functionBody: FunctionBody): Value {
         return evaluateStatementList(context, functionBody.statementList)
     }
 }

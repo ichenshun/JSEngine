@@ -5,9 +5,9 @@ enum class ValueType {
     NUMBER, STRING, BOOLEAN, OBJECT, FUNCTION, NULL, UNDEFINED
 }
 
-data class JsValue(val valueType: ValueType, val value: Any) {
+data class Value(val valueType: ValueType, val value: Any) {
     companion object {
-        val UNDEFINED = JsValue(ValueType.UNDEFINED, 0)
+        val UNDEFINED = Value(ValueType.UNDEFINED, 0)
     }
 
     fun toBoolean(): Boolean {
