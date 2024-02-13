@@ -123,4 +123,23 @@ fun main() {
         console.log(--vv)
     """
     println("code:\n$code\nresult\n${Engine().evaluate(code)}\n")
+
+    code = """
+        var person = {
+            firstName:"John",
+            lastName:"Doe",
+            age:50,
+            eyeColor:"blue"
+        };
+        console.log(person.firstName + " is " + person.age + " years old.");
+    """
+    println("code:\n$code\nresult\n${Engine().evaluate(code)}\n")
+
+    code = """
+        console.log(123+"456")
+        console.log(123+456)
+        console.log("456" + 123)
+        console.log(true+"123")
+    """
+    println("code:\n$code\nresult\n${Engine().evaluate(code)}\n")
 }

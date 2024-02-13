@@ -199,7 +199,7 @@ class Interpreter {
             is LiteralExpression ->  return evaluateLiteralExpression(context, this)
             is StringLiteralExpression -> return Value(ValueType.STRING, value.value)
             is NumericLiteralExpression -> return Value(ValueType.NUMBER, value.value.toDouble())
-            is BooleanLiteralExpression -> return Value(ValueType.BOOLEAN, value)
+            is BooleanLiteralExpression -> return Value(ValueType.BOOLEAN, value.value == "true")
             is ArrayLiteralExpression -> return evaluateArrayLiteralExpression(context, this)
             is ObjectLiteralExpression -> return evaluateObjectLiteralExpression(context, this)
             is ParenthesizedExpression -> return evaluateParenthesizedExpression(context, this)
@@ -358,7 +358,13 @@ class Interpreter {
         val leftValue = additiveExpression.leftExpression.evaluate(context)
         val rightValue = additiveExpression.rightExpression.evaluate(context)
         return when (additiveExpression.operator.type) {
-            TokenType.OPERATOR_PLUS -> Value(ValueType.NUMBER, leftValue.toDouble() + rightValue.toDouble())
+            TokenType.OPERATOR_PLUS -> {
+                if (leftValue.valueType == ValueType.STRING || rightValue.valueType == ValueType.STRING) {
+                    Value(ValueType.STRING, leftValue.toDisplayString() + rightValue.toDisplayString())
+                } else {
+                    Value(ValueType.NUMBER, leftValue.toDouble() + rightValue.toDouble())
+                }
+            }
             TokenType.OPERATOR_MINUS -> Value(ValueType.NUMBER, leftValue.toDouble() - rightValue.toDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${additiveExpression.operator.type}")
         }
@@ -470,7 +476,31 @@ class Interpreter {
     }
 
     private fun evaluateObjectLiteralExpression(context: ExecutionContext, objectLiteralExpression: ObjectLiteralExpression): Value {
-        TODO("Not yet implemented")
+        val jsObject = Object()
+        for (property in objectLiteralExpression.propertyAssignments) {
+            when (property) {
+                is PropertyExpressionAssignment -> {
+                    val propertyName = when (property.propertyName) {
+                        is IdentifierPropertyName -> {
+                            property.propertyName.name.value
+                        }
+                        is StringLiteralPropertyName -> {
+                            property.propertyName.value.value
+                        }
+                        is NumericLiteralPropertyName -> {
+                            property.propertyName.value.value
+                        }
+                        is ComputedPropertyName -> {
+                            property.propertyName.expression.evaluate(context).toDisplayString()
+                        }
+                        else ->
+                            throw RuntimeException("Unsupported property name type ${property.propertyName}")
+                    }
+                    jsObject.set(propertyName, property.propertyValue.evaluate(context))
+                }
+            }
+        }
+        return Value(ValueType.OBJECT, jsObject)
     }
 
     private fun evaluateParenthesizedExpression(context: ExecutionContext, parenthesizedExpression: ParenthesizedExpression): Value {

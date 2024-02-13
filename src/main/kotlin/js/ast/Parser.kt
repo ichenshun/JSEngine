@@ -887,8 +887,7 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseBooleanLiteralExpression(): BooleanLiteralExpression {
-        requireToken(TokenType.BOOLEAN_LITERAL)
-        return BooleanLiteralExpression(lexer.currentToken.value == "true")
+        return BooleanLiteralExpression(requireToken(TokenType.BOOLEAN_LITERAL))
     }
 
     private fun parseNullLiteralExpression(): NullLiteral {

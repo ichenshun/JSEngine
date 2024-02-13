@@ -360,7 +360,7 @@ class NullLiteral : LiteralExpression()
 class RegExpLiteral : LiteralExpression()
 
 data class BooleanLiteralExpression(
-    val value: Boolean
+    val value: Token
 ) : SingleExpression()
 
 data class StringLiteralExpression(

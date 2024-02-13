@@ -2,19 +2,19 @@ package js.interprete
 
 
 open class Object {
-    open fun get(name: String): Value {
-        return Value.UNDEFINED
+    private val properties = mutableMapOf<String, Value>()
+    fun get(name: String): Value {
+        return properties[name]?: Value.UNDEFINED
+    }
+    fun set(name: String, value: Value) {
+        properties[name] = value
     }
 }
 
 class Console : Object() {
-    private val properties = mutableMapOf<String, Value>()
-    init {
-        properties["log"]= Value(ValueType.FUNCTION, FunctionNative(this::log))
-    }
 
-    override fun get(name: String): Value {
-        return properties[name]?: Value.UNDEFINED
+    init {
+        set("log", Value(ValueType.FUNCTION, FunctionNative(this::log)))
     }
 
     private fun log(arguments: List<Value>): Value {

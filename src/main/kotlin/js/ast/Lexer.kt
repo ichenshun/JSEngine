@@ -155,6 +155,12 @@ class Lexer(private val stream: CharStream) {
         "protected" to TokenType.KEYWORD_PROTECTED,
         "static" to TokenType.KEYWORD_STATIC,
     )
+
+    private val booleans = mapOf(
+        "true" to TokenType.BOOLEAN_LITERAL,
+        "false" to TokenType.BOOLEAN_LITERAL
+    )
+
     var currentToken: Token = nextToken()
 
     fun nextToken(): Token {
@@ -188,7 +194,7 @@ class Lexer(private val stream: CharStream) {
         stream.mark()
         while (stream.nextChar()?.isLetterOrDigit() == true) {}
         val identifier = stream.substring()
-        val type = keywords[identifier] ?: TokenType.IDENTIFIER
+        val type = booleans[identifier]?: keywords[identifier] ?: TokenType.IDENTIFIER
         return Token(type, identifier)
     }
 
