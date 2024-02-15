@@ -31,7 +31,7 @@ data class Value(val valueType: ValueType, val value: Any) {
         }
     }
 
-    fun toDisplayString(): String {
+    fun asString(): String {
         return when (valueType) {
             ValueType.NUMBER, ValueType.STRING, ValueType.BOOLEAN -> value.toString()
             ValueType.NULL -> "null"

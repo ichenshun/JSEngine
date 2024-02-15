@@ -51,4 +51,36 @@ class EngineTest {
         Engine().evaluate(code)
         assertEquals("testvar=aaa1.02.0\n", outputStreamCaptor.toString())
     }
+
+    @Test
+    fun testObjectDefine() {
+        val code = """
+            var magic = "bbb"
+            var person = {
+                firstName:"John",
+                lastName:"Doe",
+                age:50,
+                eyeColor:"blue",
+                "123": "abc",
+                true: "abcdefg",
+                null: "nullll",
+                122: "122",
+                [adde("1", "23")]: "add function"
+            };
+            function adde(a, b) {
+                return magic + a + b 
+            }
+            console.log(person.firstName + " is " + person.age + " years old.")
+            magic = "ccc"
+            console.log(person.bbb123)
+            console.log(person.true)
+            console.log(person.null)
+        """
+        Engine().evaluate(code)
+        assertEquals("John is 50.0 years old.\n" +
+                "add function\n" +
+                "abcdefg\n" +
+                "nullll\n",
+            outputStreamCaptor.toString())
+    }
 }

@@ -242,7 +242,7 @@ class Interpreter {
         // 执行属性访问
         // 查找对象表，找到属性对应的值
         // 返回属性对应的值
-        return jsObject.get(memberDotExpression.identifier.value)
+        return jsObject.getProperty(memberDotExpression.identifier.value)
     }
 
     private fun evaluateNewExpression(context: ExecutionContext, newExpression: NewExpression): Value {
@@ -370,7 +370,7 @@ class Interpreter {
         return when (additiveExpression.operator.type) {
             TokenType.OPERATOR_PLUS -> {
                 if (leftValue.valueType == ValueType.STRING || rightValue.valueType == ValueType.STRING) {
-                    Value(ValueType.STRING, leftValue.toDisplayString() + rightValue.toDisplayString())
+                    Value(ValueType.STRING, leftValue.asString() + rightValue.asString())
                 } else {
                     Value(ValueType.NUMBER, leftValue.toDouble() + rightValue.toDouble())
                 }
@@ -450,7 +450,18 @@ class Interpreter {
     }
 
     private fun evaluateAssignmentExpression(context: ExecutionContext, assignmentExpression: AssignmentExpression): Value {
-        TODO("Not yet implemented")
+        when (assignmentExpression.leftExpression) {
+            is IdentifierExpression -> {
+                val value = assignmentExpression.rightExpression.evaluate(context)
+                context.setVariable(
+                    assignmentExpression.leftExpression.name.value,
+                    value
+                )
+                return value
+            }
+            else ->
+                throw RuntimeException("Unsupported left expression type: ${assignmentExpression.leftExpression::class.simpleName}")
+        }
     }
 
     private fun evaluateAssignmentOperatorExpression(context: ExecutionContext, assignmentOperatorExpression: AssignmentOperatorExpression): Value {
@@ -488,25 +499,26 @@ class Interpreter {
     private fun evaluateObjectLiteralExpression(context: ExecutionContext, objectLiteralExpression: ObjectLiteralExpression): Value {
         val jsObject = Object()
         for (property in objectLiteralExpression.propertyAssignments) {
+
             when (property) {
                 is PropertyExpressionAssignment -> {
-                    val propertyName = when (property.propertyName) {
+                    val name = when (property.propertyName) {
                         is IdentifierPropertyName -> {
                             property.propertyName.name.value
                         }
                         is StringLiteralPropertyName -> {
-                            property.propertyName.value.value
+                            property.propertyName.name.value
                         }
                         is NumericLiteralPropertyName -> {
-                            property.propertyName.value.value
+                            property.propertyName.name.value
                         }
                         is ComputedPropertyName -> {
-                            property.propertyName.expression.evaluate(context).toDisplayString()
+                            property.propertyName.expression.evaluate(context).asString()
                         }
                         else ->
                             throw RuntimeException("Unsupported property name type ${property.propertyName}")
                     }
-                    jsObject.set(propertyName, property.propertyValue.evaluate(context))
+                    jsObject.setProperty(name, property.propertyValue.evaluate(context))
                 }
             }
         }

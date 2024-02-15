@@ -406,11 +406,11 @@ data class IdentifierPropertyName(
 ) : PropertyName()
 
 data class StringLiteralPropertyName(
-    val value: Token
+    val name: Token
 ) : PropertyName()
 
 data class NumericLiteralPropertyName(
-    val value: Token
+    val name: Token
 ) : PropertyName()
 
 data class ComputedPropertyName(

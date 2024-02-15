@@ -1,12 +1,16 @@
 package js.interprete
 
+import js.ast.SingleExpression
+
 
 open class Object {
     private val properties = mutableMapOf<String, Value>()
-    fun get(name: String): Value {
+
+    fun getProperty(name: String): Value {
         return properties[name]?: Value.UNDEFINED
     }
-    fun set(name: String, value: Value) {
+
+    fun setProperty(name: String, value: Value) {
         properties[name] = value
     }
 }
@@ -14,11 +18,11 @@ open class Object {
 class Console : Object() {
 
     init {
-        set("log", Value(ValueType.FUNCTION, FunctionNative(this::log)))
+        setProperty("log", Value(ValueType.FUNCTION, FunctionNative(this::log)))
     }
 
     private fun log(arguments: List<Value>): Value {
-        println(arguments.joinToString(separator = " ") { it.toDisplayString() })
+        println(arguments.joinToString(separator = " ") { it.asString() })
         return Value.UNDEFINED
     }
 }
