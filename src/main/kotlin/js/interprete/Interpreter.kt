@@ -19,7 +19,18 @@ class Interpreter {
 
     private fun evaluateStatementList(context: ExecutionContext, statementList: StatementList): Value {
         var value = Value.UNDEFINED
-        for (statement in statementList.statements) {
+        val statementGroup = statementList.statements.groupBy {
+            when (it) {
+                is FunctionDeclaration -> "function"
+                else -> "other"
+            }
+        }
+
+        statementGroup["function"]?.forEach {
+            evaluateFunctionDeclaration(context, it as FunctionDeclaration)
+        }
+
+        for (statement in statementGroup["other"]?: emptyList()) {
             value = evaluateStatement(context, statement)
             if (statement is ReturnStatement) {
                 break
@@ -112,7 +123,6 @@ class Interpreter {
     }
 
     private fun evaluateFunctionDeclaration(context: ExecutionContext, functionDeclaration: FunctionDeclaration): Value {
-        println(functionDeclaration)
         val value = Value(ValueType.FUNCTION, FunctionCustom(functionDeclaration))
         context.setVariable(functionDeclaration.functionName.value, value)
         return value

@@ -17,7 +17,8 @@ dependencies {
 }
 
 tasks.test {
-    useJUnit()
+    // 使用junit5框架时需要使用这个方法，如果使用useJUnit会报告juptier包找不到的错误
+    useJUnitPlatform()
 }
 
 tasks.withType<KotlinCompile>() {

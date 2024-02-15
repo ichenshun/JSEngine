@@ -707,7 +707,7 @@ class Parser(private val lexer: Lexer) {
             val dotToken = requireToken(TokenType.OPERATOR_DOT)
             val hastTagToken =
                 if (isToken(TokenType.OPERATOR_HASHTAG)) requireToken(TokenType.OPERATOR_HASHTAG) else null
-            val identifier = requireToken(TokenType.IDENTIFIER)
+            val identifier = requireToken(identifierName)
             leftExpression = MemberDotExpression(leftExpression, questionToke, dotToken, hastTagToken, identifier)
         }
         return leftExpression
@@ -801,16 +801,10 @@ class Parser(private val lexer: Lexer) {
 
     private fun parsePropertyName(): PropertyName {
         return when {
+            isToken(identifierName) -> IdentifierPropertyName(eatToken())
             isToken(TokenType.STRING_LITERAL) -> StringLiteralPropertyName(eatToken())
             isToken(TokenType.NUMBER_LITERAL) -> NumericLiteralPropertyName(eatToken())
-            isToken(TokenType.IDENTIFIER,
-                TokenType.NULL_LITERAL,
-                TokenType.BOOLEAN_LITERAL
-            ) -> {
-                IdentifierPropertyName(eatToken())
-            }
             isToken(TokenType.OPERATOR_OPEN_BRACKET) -> parseComputedPropertyName()
-            isKeyword(lexer.currentToken.type) -> IdentifierPropertyName(eatToken())
             else -> throw IllegalStateException("Unexpected token: " + lexer.currentToken)
         }
     }
@@ -820,52 +814,6 @@ class Parser(private val lexer: Lexer) {
         val expression = parseSingleExpression()
         val closeBracketToken = requireToken(TokenType.OPERATOR_CLOSE_BRACKET)
         return ComputedPropertyName(openBracketToken, expression, closeBracketToken)
-    }
-
-    private fun isKeyword(tokenType: TokenType): Boolean {
-        when (tokenType) {
-            TokenType.KEYWORD_FUNCTION,
-            TokenType.KEYWORD_IF,
-            TokenType.KEYWORD_ELSE,
-            TokenType.KEYWORD_WHILE,
-            TokenType.KEYWORD_FOR,
-            TokenType.KEYWORD_DO,
-            TokenType.KEYWORD_TRY,
-            TokenType.KEYWORD_CATCH,
-            TokenType.KEYWORD_FINALLY,
-            TokenType.KEYWORD_THROW,
-            TokenType.KEYWORD_SWITCH,
-            TokenType.KEYWORD_CASE,
-            TokenType.KEYWORD_DEFAULT,
-            TokenType.KEYWORD_BREAK,
-            TokenType.KEYWORD_CONTINUE,
-            TokenType.KEYWORD_RETURN,
-            TokenType.KEYWORD_VAR,
-            TokenType.KEYWORD_LET,
-            TokenType.KEYWORD_CONST,
-            TokenType.KEYWORD_CLASS,
-            TokenType.KEYWORD_EXTENDS,
-            TokenType.KEYWORD_IMPLEMENTS,
-            TokenType.KEYWORD_INTERFACE,
-            TokenType.KEYWORD_NEW,
-            TokenType.KEYWORD_THIS,
-            TokenType.KEYWORD_SUPER,
-            TokenType.KEYWORD_YIELD,
-            TokenType.KEYWORD_WITH,
-            TokenType.KEYWORD_AS,
-            TokenType.KEYWORD_IN,
-            TokenType.KEYWORD_OF,
-            TokenType.KEYWORD_TYPEOF,
-            TokenType.KEYWORD_INSTANCEOF,
-            TokenType.KEYWORD_IMPORT,
-            TokenType.KEYWORD_FROM,
-            TokenType.KEYWORD_EXPORT,
-            TokenType.KEYWORD_DELETE,
-            TokenType.KEYWORD_AWAIT,
-            TokenType.KEYWORD_VOID,
-            TokenType.KEYWORD_DEBUGGER -> return true
-            else -> return false
-        }
     }
 
     private fun parseArrayLiteralExpression(): SingleExpression {
@@ -1013,6 +961,16 @@ class Parser(private val lexer: Lexer) {
         }
     }
 
+    private fun requireToken(filter: (TokenType) -> Boolean ): Token {
+        val currentToken = lexer.currentToken
+        if (filter(currentToken.type)) {
+            lexer.nextToken()
+            return currentToken
+        } else {
+            throw IllegalStateException("Expected token type, but got ${lexer.currentToken.type}")
+        }
+    }
+
     private fun optionalToken(vararg tokenTypes: TokenType): Token? {
         if (lexer.currentToken.type in tokenTypes) {
             return eatToken()
@@ -1024,6 +982,10 @@ class Parser(private val lexer: Lexer) {
         return lexer.currentToken.type in tokenType
     }
 
+    private fun isToken(filter: (TokenType) -> Boolean): Boolean {
+        return filter(lexer.currentToken.type)
+    }
+
     private fun eatToken(): Token {
         val token = lexer.currentToken
         lexer.nextToken()
@@ -1031,60 +993,146 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun isStatementLeaderToken(tokenType: TokenType): Boolean {
-        when (tokenType) {
-            TokenType.OPERATOR_OPEN_BRACE,
-            TokenType.KEYWORD_VAR,
-            TokenType.KEYWORD_IMPORT,
-            TokenType.KEYWORD_EXPORT,
-            TokenType.OPERATOR_SEMICOLON,
-            TokenType.KEYWORD_CLASS,
-            TokenType.KEYWORD_FUNCTION,
-            TokenType.KEYWORD_IF,
-            TokenType.KEYWORD_DO,
-            TokenType.KEYWORD_WHILE,
-            TokenType.KEYWORD_FOR,
-            TokenType.KEYWORD_CONTINUE,
-            TokenType.KEYWORD_BREAK,
-            TokenType.KEYWORD_RETURN,
-            TokenType.KEYWORD_YIELD,
-            TokenType.KEYWORD_WITH,
-            TokenType.IDENTIFIER,
-            TokenType.KEYWORD_SWITCH,
-            TokenType.KEYWORD_THROW,
-            TokenType.KEYWORD_TRY,
-            TokenType.KEYWORD_DEBUGGER -> return true
-            else -> return isExpressionLeaderToken(tokenType)
-        }
+        return statementLeaderTokens.contains(tokenType) || isExpressionLeaderToken(tokenType)
     }
 
+    private val statementLeaderTokens = mutableSetOf(
+        TokenType.OPERATOR_OPEN_BRACE,
+        TokenType.KEYWORD_VAR,
+        TokenType.KEYWORD_IMPORT,
+        TokenType.KEYWORD_EXPORT,
+        TokenType.OPERATOR_SEMICOLON,
+        TokenType.KEYWORD_CLASS,
+        TokenType.KEYWORD_FUNCTION,
+        TokenType.KEYWORD_IF,
+        TokenType.KEYWORD_DO,
+        TokenType.KEYWORD_WHILE,
+        TokenType.KEYWORD_FOR,
+        TokenType.KEYWORD_CONTINUE,
+        TokenType.KEYWORD_BREAK,
+        TokenType.KEYWORD_RETURN,
+        TokenType.KEYWORD_YIELD,
+        TokenType.KEYWORD_WITH,
+        TokenType.IDENTIFIER,
+        TokenType.KEYWORD_SWITCH,
+        TokenType.KEYWORD_THROW,
+        TokenType.KEYWORD_TRY,
+        TokenType.KEYWORD_DEBUGGER
+    )
+
+    private val expressionLeaderTokens = mutableSetOf(
+        TokenType.KEYWORD_ASYNC,
+        TokenType.KEYWORD_FUNCTION,
+        TokenType.KEYWORD_CLASS,
+        TokenType.KEYWORD_DELETE,
+        TokenType.KEYWORD_VOID,
+        TokenType.KEYWORD_TYPEOF,
+        TokenType.OPERATOR_PLUS_PLUS,
+        TokenType.OPERATOR_MINUS_MINUS,
+        TokenType.OPERATOR_PLUS,
+        TokenType.OPERATOR_MINUS,
+        TokenType.OPERATOR_BIT_NOT,
+        TokenType.OPERATOR_NOT,
+        TokenType.KEYWORD_AWAIT,
+        TokenType.KEYWORD_IMPORT,
+        TokenType.KEYWORD_YIELD,
+        TokenType.KEYWORD_THIS,
+        TokenType.IDENTIFIER,
+        TokenType.KEYWORD_SUPER,
+        TokenType.NULL_LITERAL,
+        TokenType.BOOLEAN_LITERAL,
+        TokenType.NUMBER_LITERAL,
+        TokenType.STRING_LITERAL,
+        TokenType.OPERATOR_OPEN_BRACKET,
+        TokenType.OPERATOR_OPEN_BRACE,
+        TokenType.OPERATOR_OPEN_PAREN
+    )
+
     private fun isExpressionLeaderToken(tokenType: TokenType): Boolean {
-        when (tokenType) {
-            TokenType.KEYWORD_ASYNC,
-            TokenType.KEYWORD_FUNCTION,
-            TokenType.KEYWORD_CLASS,
-            TokenType.KEYWORD_DELETE,
-            TokenType.KEYWORD_VOID,
-            TokenType.KEYWORD_TYPEOF,
-            TokenType.OPERATOR_PLUS_PLUS,
-            TokenType.OPERATOR_MINUS_MINUS,
-            TokenType.OPERATOR_PLUS,
-            TokenType.OPERATOR_MINUS,
-            TokenType.OPERATOR_BIT_NOT,
-            TokenType.OPERATOR_NOT,
-            TokenType.KEYWORD_AWAIT,
-            TokenType.KEYWORD_IMPORT,
-            TokenType.KEYWORD_YIELD,
-            TokenType.KEYWORD_THIS,
-            TokenType.IDENTIFIER,
-            TokenType.KEYWORD_SUPER,
-            TokenType.NULL_LITERAL,
-            TokenType.BOOLEAN_LITERAL,
-            TokenType.NUMBER_LITERAL,
-            TokenType.STRING_LITERAL,
-            TokenType.OPERATOR_OPEN_BRACKET,
-            TokenType.OPERATOR_OPEN_BRACE,
-            TokenType.OPERATOR_OPEN_PAREN -> return true
-            else -> return false
-        }
+        return expressionLeaderTokens.contains(tokenType)
+    }
+
+    private val identifierNameTokens = mutableSetOf(
+        TokenType.KEYWORD_FUNCTION,
+
+        // 关键字if
+        TokenType.KEYWORD_IF,
+
+        // 关键字while
+        TokenType.KEYWORD_WHILE,
+
+        // 关键字return
+        TokenType.KEYWORD_RETURN,
+
+        // 关键字var
+        TokenType.KEYWORD_VAR,
+
+        // 关键字new
+        TokenType.KEYWORD_NEW,
+
+        // 关键字delete
+        TokenType.KEYWORD_DELETE,
+
+        // 关键字void
+        TokenType.KEYWORD_VOID,
+
+        // 关键字typeof
+        TokenType.KEYWORD_TYPEOF,
+
+        // 关键字this
+        TokenType.KEYWORD_THIS,
+
+        // 关键字else
+        TokenType.KEYWORD_ELSE,
+
+        // 关键字for
+        TokenType.KEYWORD_FOR,
+
+        // 关键字do
+        TokenType.KEYWORD_DO,
+
+        // 关键字in
+        TokenType.KEYWORD_IN,
+        TokenType.KEYWORD_CLASS,
+        TokenType.KEYWORD_AWAIT,
+        TokenType.KEYWORD_IMPORT,
+        TokenType.KEYWORD_YIELD,
+        TokenType.KEYWORD_SUPER,
+        TokenType.KEYWORD_ASYNC,
+        TokenType.KEYWORD_OF,
+        TokenType.KEYWORD_EXPORT,
+        TokenType.KEYWORD_CONTINUE,
+        TokenType.KEYWORD_BREAK,
+        TokenType.KEYWORD_WITH,
+        TokenType.KEYWORD_SWITCH,
+        TokenType.KEYWORD_LABELLED,
+        TokenType.KEYWORD_THROW,
+        TokenType.KEYWORD_TRY,
+        TokenType.KEYWORD_DEBUGGER,
+        TokenType.KEYWORD_CATCH,
+        TokenType.KEYWORD_FINALLY,
+        TokenType.KEYWORD_INSTANCEOF,
+        TokenType.KEYWORD_CASE,
+        TokenType.KEYWORD_DEFAULT,
+        TokenType.KEYWORD_AS,
+        TokenType.KEYWORD_FROM,
+        TokenType.KEYWORD_ENUM,
+        TokenType.KEYWORD_EXTENDS,
+        TokenType.KEYWORD_CONST,
+        TokenType.KEYWORD_IMPLEMENTS,
+        TokenType.KEYWORD_LET,
+        TokenType.KEYWORD_PRIVATE,
+        TokenType.KEYWORD_PUBLIC,
+        TokenType.KEYWORD_INTERFACE,
+        TokenType.KEYWORD_PACKAGE,
+        TokenType.KEYWORD_PROTECTED,
+        TokenType.KEYWORD_STATIC,
+        TokenType.NULL_LITERAL,
+        TokenType.BOOLEAN_LITERAL,
+        TokenType.IDENTIFIER,
+    )
+
+    private val identifierName: (tokenType: TokenType) -> Boolean = {
+        it -> identifierNameTokens.contains(it)
     }
 }
