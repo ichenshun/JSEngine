@@ -14,8 +14,8 @@ class EngineTest {
     private val outputStreamCaptor = ByteArrayOutputStream()
 
     @BeforeEach
+    // 这个方法在每个@Test标记的测试方法执行前都会被执行，每次都会创建新的EngineTest实例
     fun setUp() {
-        // 这个方法在每个@Test标记的测试方法执行前都会被执行
         System.setOut(PrintStream(outputStreamCaptor))
     }
 
@@ -81,6 +81,21 @@ class EngineTest {
                 "add function\n" +
                 "abcdefg\n" +
                 "nullll\n",
+            outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun testArrayDefine() {
+        val code = """
+            var arr = [1,2,3,4,5];
+            console.log(arr[0]);
+            console.log(arr[1]);
+            console.log(arr);
+        """
+        Engine().evaluate(code)
+        assertEquals("1.0\n" +
+                "2.0\n" +
+                "[ 1.0, 2.0, 3.0, 4.0, 5.0 ]\n",
             outputStreamCaptor.toString())
     }
 }

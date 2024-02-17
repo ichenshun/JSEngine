@@ -33,7 +33,7 @@ data class Value(val valueType: ValueType, val value: Any) {
 
     fun asString(): String {
         return when (valueType) {
-            ValueType.NUMBER, ValueType.STRING, ValueType.BOOLEAN -> value.toString()
+            ValueType.NUMBER, ValueType.STRING, ValueType.BOOLEAN, ValueType.OBJECT-> value.toString()
             ValueType.NULL -> "null"
             ValueType.UNDEFINED -> "undefined"
             else -> throw IllegalStateException("Cannot convert $valueType to String")

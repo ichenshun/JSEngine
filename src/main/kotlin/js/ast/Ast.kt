@@ -218,7 +218,11 @@ data class ExpressionStatement(
     val expressionSequence: ExpressionSequence
 ) : Statement()
 
-open class SingleExpression : Node()
+open class SingleExpression : Node() {
+    companion object {
+        val Empty = SingleExpression()
+    }
+}
 
 data class ExpressionSequence(
     val expressions: List<SingleExpression>
@@ -440,8 +444,19 @@ data class LogicalOrExpression(
 ) : SingleExpression()
 
 data class ArrayLiteralExpression(
-    val elements: List<Node>
+    val openBracketToken: Token,
+    val elements: List<ArrayElement>,
+    val closeBracketToken: Token
 ) : SingleExpression()
+
+data class ArrayElement(
+    val ellipse: Token?,
+    val expression: SingleExpression,
+): Node() {
+    companion object {
+        val Empty = ArrayElement(null, SingleExpression.Empty)
+    }
+}
 
 data class TemplateStringExpression(
     val expression: SingleExpression,

@@ -230,7 +230,16 @@ class Interpreter {
     }
 
     private fun evaluateMemberIndexExpression(context: ExecutionContext, memberIndexExpression: MemberIndexExpression): Value {
-        TODO("Not yet implemented")
+        val value = memberIndexExpression.leftExpression.evaluate(context)
+        if (value.valueType != ValueType.OBJECT) {
+            throw RuntimeException("Member access on non-object: $value")
+        }
+        val jsObject = value.value as Object
+        val index = memberIndexExpression.expressionSequence.evaluate(context)
+        if (index.valueType == ValueType.NUMBER) {
+            return (jsObject as Array).getElement((index.value as Double).toInt())
+        }
+        return jsObject.getProperty(index.asString())
     }
 
     private fun evaluateMemberDotExpression(context: ExecutionContext, memberDotExpression: MemberDotExpression): Value {
@@ -493,7 +502,11 @@ class Interpreter {
     }
 
     private fun evaluateArrayLiteralExpression(context: ExecutionContext, arrayLiteralExpression: ArrayLiteralExpression): Value {
-        TODO("Not yet implemented")
+        val jsArray = Array()
+        arrayLiteralExpression.elements.forEach {it ->
+            jsArray.append(it.expression.evaluate(context))
+        }
+        return Value(ValueType.OBJECT, jsArray)
     }
 
     private fun evaluateObjectLiteralExpression(context: ExecutionContext, objectLiteralExpression: ObjectLiteralExpression): Value {

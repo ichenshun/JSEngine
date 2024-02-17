@@ -817,7 +817,31 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseArrayLiteralExpression(): SingleExpression {
-        TODO("Not yet implemented")
+        val openBracketToken = requireToken(TokenType.OPERATOR_OPEN_BRACKET)
+        val elements = mutableListOf<ArrayElement>()
+        while (!isToken(TokenType.OPERATOR_CLOSE_BRACKET) && !isToken(TokenType.EOF)) {
+            if (isToken(TokenType.OPERATOR_COMMA)) {
+                // 添加一个空的ArrayElement，表示元素之间的逗号
+                elements.add(ArrayElement.Empty)
+            } else {
+                elements.add(parseArrayElement())
+                if (isToken(TokenType.OPERATOR_COMMA)) {
+                    eatToken()
+                }
+            }
+        }
+        val closeBracketToken = requireToken(TokenType.OPERATOR_CLOSE_BRACKET)
+        return ArrayLiteralExpression(openBracketToken, elements, closeBracketToken)
+    }
+
+    private fun parseArrayElement(): ArrayElement {
+        val ellipsisToken = if (isToken(TokenType.OPERATOR_ELLIPSIS)) {
+             requireToken(TokenType.OPERATOR_ELLIPSIS)
+        } else {
+            null
+        }
+        val expression = parseSingleExpression()
+        return ArrayElement(ellipsisToken, expression)
     }
 
     private fun parseRegularExpressionLiteralExpression(): RegExpLiteral {
@@ -967,7 +991,7 @@ class Parser(private val lexer: Lexer) {
             lexer.nextToken()
             return currentToken
         } else {
-            throw IllegalStateException("Expected token type, but got ${lexer.currentToken.type}")
+            throw IllegalStateException("Unexpected token type ${lexer.currentToken.type}")
         }
     }
 
