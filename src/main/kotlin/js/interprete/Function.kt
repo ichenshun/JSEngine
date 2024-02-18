@@ -18,7 +18,7 @@ class FunctionCustom(private val functionDeclaration: FunctionDeclaration): Func
     override fun call(context: ExecutionContext, interpreter: Interpreter, arguments: List<Value>): Value {
         // 给形参赋值，创建一个执行上下文，类似函数调用栈
         val parameters = functionDeclaration.parameters
-        val executionContext = ExecutionContext()
+        val executionContext = ExecutionContext(context)
         for (i in parameters.indices) {
             executionContext.setVariable(parameters[i].value, arguments[i])
         }

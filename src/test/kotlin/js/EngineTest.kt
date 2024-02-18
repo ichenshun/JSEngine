@@ -242,6 +242,40 @@ class EngineTest {
     }
 
     @Test
+    fun testVariableReferenceInFunction() {
+        val code = """
+            var varInGlobal = "varInGlobal"
+            function first() {
+                var varInFirstFunction = "varInFirstFunction"
+                console.log(varInGlobal)
+                function second() {
+                    var varInSecondFunction = "varInSecondFunction"
+                    console.log(varInFirstFunction)
+                    console.log(varInGlobal)
+                    function third() {
+                        console.log(varInFirstFunction)
+                        console.log(varInSecondFunction)
+                        console.log(varInGlobal)
+                    }
+                    third()
+                }
+                second()
+            }
+            first()
+        """
+        Engine().evaluate(code)
+        val expected = """
+            varInGlobal
+            varInFirstFunction
+            varInGlobal
+            varInFirstFunction
+            varInSecondFunction
+            varInGlobal
+        """.trimIndent() + "\n"
+        assertEquals(expected, outputStreamCaptor.toString())
+    }
+
+    @Test
     fun testObjectDefine() {
         val code = """
             var magic = "bbb"
@@ -299,7 +333,8 @@ class EngineTest {
         val code = """
             var a = 1;
             console.log(a == 1 ? "a is 1" : "a is not 1")
-            console.log(a > 0 ? a < 10 ? a > 5 ? "a is between 5 and 10" : "a is between 0 and 5" : "a is great than 10" : " a is less than 0");
+            console.log(a > 0 ? a < 10 ? a > 5 ? "a is between 5 and 10" : 
+                    "a is between 0 and 5" : "a is great than 10" : " a is less than 0");
         """
         Engine().evaluate(code)
         val expected = """
