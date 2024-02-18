@@ -438,9 +438,9 @@ data class TernaryExpression(
 ) : SingleExpression()
 
 data class LogicalOrExpression(
-    val left: SingleExpression,
+    val leftExpression: SingleExpression,
     val op: Token,
-    val right: SingleExpression
+    val rightExpression: SingleExpression
 ) : SingleExpression()
 
 data class ArrayLiteralExpression(

@@ -114,7 +114,7 @@ class Interpreter {
 
     private fun evaluateIfStatement(context: ExecutionContext, statement: IfStatement): Value {
         val value = evaluateExpressionStatement(context, statement.condition)
-        if  (value.toBoolean()) {
+        if  (value.asBoolean()) {
             return evaluateStatement(context, statement.trueStatement)
         } else if (statement.falseStatement != null) {
             return evaluateStatement(context, statement.falseStatement)
@@ -273,7 +273,7 @@ class Interpreter {
         when (postIncrementExpression.expression) {
             is IdentifierExpression -> {
                 val value = postIncrementExpression.expression.evaluate(context)
-                context.setVariable(postIncrementExpression.expression.name.value, Value(ValueType.NUMBER, value.toDouble() + 1))
+                context.setVariable(postIncrementExpression.expression.name.value, Value(ValueType.NUMBER, value.asDouble() + 1))
                 return value
             }
             else ->
@@ -286,7 +286,7 @@ class Interpreter {
         when (postDecreaseExpression.expression) {
             is IdentifierExpression -> {
                 val value = postDecreaseExpression.expression.evaluate(context)
-                context.setVariable(postDecreaseExpression.expression.name.value, Value(ValueType.NUMBER, value.toDouble() - 1))
+                context.setVariable(postDecreaseExpression.expression.name.value, Value(ValueType.NUMBER, value.asDouble() - 1))
                 return value
             }
             else ->
@@ -298,7 +298,7 @@ class Interpreter {
         when (preIncrementExpression.expression) {
             is IdentifierExpression -> {
                 val value = preIncrementExpression.expression.evaluate(context)
-                val incrementValue = Value(ValueType.NUMBER, value.toDouble() + 1)
+                val incrementValue = Value(ValueType.NUMBER, value.asDouble() + 1)
                 context.setVariable(preIncrementExpression.expression.name.value, incrementValue)
                 return incrementValue
             }
@@ -311,7 +311,7 @@ class Interpreter {
         when (preDecreaseExpression.expression) {
             is IdentifierExpression -> {
                 val value = preDecreaseExpression.expression.evaluate(context)
-                val incrementValue = Value(ValueType.NUMBER, value.toDouble() - 1)
+                val incrementValue = Value(ValueType.NUMBER, value.asDouble() - 1)
                 context.setVariable(preDecreaseExpression.expression.name.value, incrementValue)
                 return incrementValue
             }
@@ -346,7 +346,8 @@ class Interpreter {
     }
 
     private fun evaluateNotExpression(context: ExecutionContext, notExpression: NotExpression): Value {
-        TODO("Not yet implemented")
+        val value = notExpression.expression.evaluate(context)
+        return Value(ValueType.BOOLEAN, !value.asBoolean())
     }
 
     private fun evaluateAwaitExpression(context: ExecutionContext, awaitExpression: AwaitExpression): Value {
@@ -356,9 +357,8 @@ class Interpreter {
     private fun evaluatePowerExpression(context: ExecutionContext, powerExpression: PowerExpression): Value {
         val leftValue = powerExpression.leftExpression.evaluate(context)
         val rightValue = powerExpression.rightExpression.evaluate(context)
-        println("left=${leftValue.value}, right=${rightValue.value}")
         return when (powerExpression.operator.type) {
-            TokenType.OPERATOR_POWER -> Value(ValueType.NUMBER, leftValue.toDouble().pow(rightValue.toDouble()))
+            TokenType.OPERATOR_POWER -> Value(ValueType.NUMBER, leftValue.asDouble().pow(rightValue.asDouble()))
             else -> throw IllegalArgumentException("Invalid operator: ${powerExpression.operator.type}")
         }
     }
@@ -367,8 +367,8 @@ class Interpreter {
         val leftValue = multiplicativeExpression.leftExpression.evaluate(context)
         val rightValue = multiplicativeExpression.rightExpression.evaluate(context)
         return when (multiplicativeExpression.operator.type) {
-            TokenType.OPERATOR_MULTIPLY -> Value(ValueType.NUMBER, leftValue.toDouble() * rightValue.toDouble())
-            TokenType.OPERATOR_DIVIDE -> Value(ValueType.NUMBER, leftValue.toDouble() / rightValue.toDouble())
+            TokenType.OPERATOR_MULTIPLY -> Value(ValueType.NUMBER, leftValue.asDouble() * rightValue.asDouble())
+            TokenType.OPERATOR_DIVIDE -> Value(ValueType.NUMBER, leftValue.asDouble() / rightValue.asDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${multiplicativeExpression.operator.type}")
         }
     }
@@ -381,10 +381,10 @@ class Interpreter {
                 if (leftValue.valueType == ValueType.STRING || rightValue.valueType == ValueType.STRING) {
                     Value(ValueType.STRING, leftValue.asString() + rightValue.asString())
                 } else {
-                    Value(ValueType.NUMBER, leftValue.toDouble() + rightValue.toDouble())
+                    Value(ValueType.NUMBER, leftValue.asDouble() + rightValue.asDouble())
                 }
             }
-            TokenType.OPERATOR_MINUS -> Value(ValueType.NUMBER, leftValue.toDouble() - rightValue.toDouble())
+            TokenType.OPERATOR_MINUS -> Value(ValueType.NUMBER, leftValue.asDouble() - rightValue.asDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${additiveExpression.operator.type}")
         }
     }
@@ -402,13 +402,13 @@ class Interpreter {
         val rightValue = relationalExpression.rightExpression.evaluate(context)
         return when (relationalExpression.operator.type) {
             TokenType.OPERATOR_LESS_THAN ->
-                Value(ValueType.BOOLEAN, leftValue.toDouble() < rightValue.toDouble())
+                Value(ValueType.BOOLEAN, leftValue.asDouble() < rightValue.asDouble())
             TokenType.OPERATOR_MORE_THAN ->
-                Value(ValueType.BOOLEAN, leftValue.toDouble() > rightValue.toDouble())
+                Value(ValueType.BOOLEAN, leftValue.asDouble() > rightValue.asDouble())
             TokenType.OPERATOR_LESS_THAN_EQUALS ->
-                Value(ValueType.BOOLEAN, leftValue.toDouble() >= rightValue.toDouble())
+                Value(ValueType.BOOLEAN, leftValue.asDouble() >= rightValue.asDouble())
             TokenType.OPERATOR_MORE_THAN_EQUALS ->
-                Value(ValueType.BOOLEAN, leftValue.toDouble() <= rightValue.toDouble())
+                Value(ValueType.BOOLEAN, leftValue.asDouble() <= rightValue.asDouble())
             else -> throw IllegalArgumentException("Invalid operator: ${relationalExpression.operator.type}")
         }
     }
@@ -447,11 +447,15 @@ class Interpreter {
     }
 
     private fun evaluateLogicalAndExpression(context: ExecutionContext, logicalAndExpression: LogicalAndExpression): Value {
-        TODO("Not yet implemented")
+        val left = logicalAndExpression.leftExpression.evaluate(context)
+        val right = logicalAndExpression.rightExpression.evaluate(context)
+        return Value(ValueType.BOOLEAN, left.asBoolean() && right.asBoolean())
     }
 
     private fun evaluateLogicalOrExpression(context: ExecutionContext, logicalOrExpression: LogicalOrExpression): Value {
-        TODO("Not yet implemented")
+        val left = logicalOrExpression.leftExpression.evaluate(context)
+        val right = logicalOrExpression.rightExpression.evaluate(context)
+        return Value(ValueType.BOOLEAN, left.asBoolean() || right.asBoolean())
     }
 
     private fun evaluateTernaryExpression(context: ExecutionContext, ternaryExpression: TernaryExpression): Value {

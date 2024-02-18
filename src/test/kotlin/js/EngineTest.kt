@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.assertThrows
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
@@ -25,24 +26,135 @@ class EngineTest {
     }
 
     @Test
-    fun testAdditiveExpression() {
+    fun testArithmeticExpression() {
         val code = """
             console.log(1 + 2)
             console.log(1/2)
+            console.log(1 + 2 * 3)
+            console.log((1 + 2)*3)
+            console.log(1 + 2*(2**3))
+            console.log(1 + 2*2**3 / 2)
+            console.log((1<2) + 1)
+            console.log((1>2) + 1)
+            var c = 120
+            console.log(c)
+            console.log(c++)
+            console.log(++c)
+            var vv = 1
+            console.log(vv)
+            console.log(vv--)
+            console.log(--vv)
         """
         Engine().evaluate(code)
         val excepted = """
             3
             0.5
+            7
+            9
+            17
+            9
+            2
+            1
+            120
+            120
+            122
+            1
+            1
+            -1
         """.trimIndent() + "\n"
         assertEquals(excepted, outputStreamCaptor.toString())
     }
 
     @Test
-    fun testOutput() {
-        val code = "console.log('Hello, World!')"
+    fun testLogicalExpression() {
+        val code = """
+            console.log(1 < 2 && 2 < 3)
+            console.log(1 < 2 || 2 < 3)
+            console.log(!(1 < 2))
+            console.log(!(1 > 2))
+        """
         Engine().evaluate(code)
-        assertEquals("Hello, World!\n", outputStreamCaptor.toString())
+        val excepted = """
+            true
+            true
+            false
+            true
+        """.trimIndent() + "\n"
+        assertEquals(excepted, outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun testIfStatement() {
+        val code = """
+            var a=1
+            var b=1+a
+            var c=5+a+b
+            if (c<1) {
+                console.log(2)
+            } else {
+                console.log(3)
+            }
+            if (a<b) {
+                console.log(4)
+            }
+            if (c>b) {
+                console.log(c)
+            }
+        """
+        Engine().evaluate(code)
+        val expected = """
+            3
+            4
+            8
+        """.trimIndent() + "\n"
+        assertEquals(expected, outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun testMultiArguments() {
+        val code = """
+            var name = "Bob"
+            console.log(1>2, name, 123, "abc")
+        """
+        Engine().evaluate(code)
+        assertEquals("false Bob 123 abc\n", outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun testString() {
+        val code = """
+            console.log('Hello, World!')
+            console.log(123+"456")
+            console.log(123+456)
+            console.log("456" + 123)
+            console.log(true+"123")
+        """
+        Engine().evaluate(code)
+        val excepted = """
+            Hello, World!
+            123456
+            579
+            456123
+            true123
+        """.trimIndent() + "\n"
+        assertEquals(excepted, outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun functionCanBeDeclaredAndCall() {
+        val code = """
+            function add(a, b) {
+                return a + b
+            }
+            console.log(add(1, 2))
+            console.log(add(52, 4))
+        """
+        Engine().evaluate(code)
+        val expected = """
+            3
+            56
+        """.trimIndent() + "\n"
+        assertEquals(expected, outputStreamCaptor.toString())
     }
 
     @Test
@@ -57,6 +169,46 @@ class EngineTest {
         """
         Engine().evaluate(code)
         assertEquals("testvar=aaa12\n", outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun multiFunctionCanBeDeclaredAndCalledAndGlobalVariableCanBeReferenced() {
+        val code = """
+            var factor = 20
+            var factor2 = 10
+            function minus(a, b) {
+                return a - b - factor
+            }
+            function add(a, b) {
+                return a + b + factor2
+            }
+            function test(a, b) {
+                var c = a+b
+                return add(a, c) + minus(a, b)
+            }
+            console.log(test(50, 200))
+        """
+        Engine().evaluate(code)
+        assertEquals("140\n", outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun localVariablesCannotBeReferencedFromOutside() {
+
+        val code = """
+            function test() {
+                var a = 10
+                var b = 20
+                return a + b
+            }
+            console.log(test())
+            console.log(a)
+        """
+        assertThrows<RuntimeException> {
+            Engine().evaluate(code)
+        }
+
+        assertEquals("30\n", outputStreamCaptor.toString())
     }
 
     @Test

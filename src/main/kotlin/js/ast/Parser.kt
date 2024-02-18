@@ -276,10 +276,12 @@ class Parser(private val lexer: Lexer) {
     private fun parseFormalParameterList(): List<Token> {
         // TODO 解析 ECMAScript 6: Rest Parameter
         val parameters = mutableListOf<Token>()
-        parameters.add(requireToken(TokenType.IDENTIFIER))
-        while (lexer.currentToken.type != TokenType.OPERATOR_CLOSE_PAREN) {
-            requireToken(TokenType.OPERATOR_COMMA)
+        if (!isToken(TokenType.OPERATOR_CLOSE_PAREN)) {
             parameters.add(requireToken(TokenType.IDENTIFIER))
+            while (!isToken(TokenType.OPERATOR_CLOSE_PAREN)) {
+                requireToken(TokenType.OPERATOR_COMMA)
+                parameters.add(requireToken(TokenType.IDENTIFIER))
+            }
         }
         return parameters
     }

@@ -10,7 +10,7 @@ data class Value(val valueType: ValueType, val value: Any) {
         val UNDEFINED = Value(ValueType.UNDEFINED, 0)
     }
 
-    fun toBoolean(): Boolean {
+    fun asBoolean(): Boolean {
         return when (valueType) {
             ValueType.NUMBER -> (value as Number) != 0.0
             ValueType.STRING -> (value as String).isEmpty()
@@ -21,7 +21,7 @@ data class Value(val valueType: ValueType, val value: Any) {
         }
     }
 
-    fun toDouble(): Double {
+    fun asDouble(): Double {
         return when (valueType) {
             ValueType.NUMBER -> value as Double
             ValueType.BOOLEAN -> if (value as Boolean) 1.0 else 0.0
