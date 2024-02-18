@@ -88,6 +88,15 @@ class EngineTest {
             console.log(1 < 2 || 2 < 3)
             console.log(!(1 < 2))
             console.log(!(1 > 2))
+            var d = 10
+            var zero = 0
+            var c = "this is c"
+            console.log(d == 10 || c)
+            console.log(d != 10 || c)
+            console.log(d == 10 && c)
+            console.log(d != 10 && c)
+            console.log(!zero)
+            console.log(!d)
         """
         Engine().evaluate(code)
         val excepted = """
@@ -95,6 +104,12 @@ class EngineTest {
             true
             false
             true
+            true
+            this is c
+            this is c
+            false
+            true
+            false
         """.trimIndent() + "\n"
         assertEquals(excepted, outputStreamCaptor.toString())
     }

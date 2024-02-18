@@ -448,14 +448,18 @@ class Interpreter {
 
     private fun evaluateLogicalAndExpression(context: ExecutionContext, logicalAndExpression: LogicalAndExpression): Value {
         val left = logicalAndExpression.leftExpression.evaluate(context)
-        val right = logicalAndExpression.rightExpression.evaluate(context)
-        return Value(ValueType.BOOLEAN, left.asBoolean() && right.asBoolean())
+        if (!left.asBoolean()) {
+            return left
+        }
+        return logicalAndExpression.rightExpression.evaluate(context)
     }
 
     private fun evaluateLogicalOrExpression(context: ExecutionContext, logicalOrExpression: LogicalOrExpression): Value {
         val left = logicalOrExpression.leftExpression.evaluate(context)
-        val right = logicalOrExpression.rightExpression.evaluate(context)
-        return Value(ValueType.BOOLEAN, left.asBoolean() || right.asBoolean())
+        if (left.asBoolean()) {
+            return left
+        }
+        return logicalOrExpression.rightExpression.evaluate(context)
     }
 
     private fun evaluateTernaryExpression(context: ExecutionContext, ternaryExpression: TernaryExpression): Value {
