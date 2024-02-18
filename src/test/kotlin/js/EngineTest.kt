@@ -26,9 +26,16 @@ class EngineTest {
 
     @Test
     fun testAdditiveExpression() {
-        val code = "console.log(1 + 2)"
+        val code = """
+            console.log(1 + 2)
+            console.log(1/2)
+        """
         Engine().evaluate(code)
-        assertEquals("3.0\n", outputStreamCaptor.toString())
+        val excepted = """
+            3
+            0.5
+        """.trimIndent() + "\n"
+        assertEquals(excepted, outputStreamCaptor.toString())
     }
 
     @Test
@@ -49,7 +56,7 @@ class EngineTest {
             }
         """
         Engine().evaluate(code)
-        assertEquals("testvar=aaa1.02.0\n", outputStreamCaptor.toString())
+        assertEquals("testvar=aaa12\n", outputStreamCaptor.toString())
     }
 
     @Test
@@ -77,11 +84,13 @@ class EngineTest {
             console.log(person.null)
         """
         Engine().evaluate(code)
-        assertEquals("John is 50.0 years old.\n" +
-                "add function\n" +
-                "abcdefg\n" +
-                "nullll\n",
-            outputStreamCaptor.toString())
+        val expected = """
+            John is 50 years old.
+            add function
+            abcdefg
+            nullll
+        """.trimIndent() + "\n"
+        assertEquals(expected, outputStreamCaptor.toString())
     }
 
     @Test
@@ -93,9 +102,11 @@ class EngineTest {
             console.log(arr);
         """
         Engine().evaluate(code)
-        assertEquals("1.0\n" +
-                "2.0\n" +
-                "[ 1.0, 2.0, 3.0, 4.0, 5.0 ]\n",
-            outputStreamCaptor.toString())
+        val excepted = """
+            1
+            2
+            [ 1, 2, 3, 4, 5 ]
+        """.trimIndent() + "\n"
+        assertEquals(excepted, outputStreamCaptor.toString())
     }
 }

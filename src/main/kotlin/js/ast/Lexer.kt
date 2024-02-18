@@ -169,7 +169,7 @@ class Lexer(private val stream: CharStream) {
             currentToken = Token(TokenType.EOF, "")
         } else if (char.isLetter()) {
             currentToken = parseIdentifierToken()
-        } else if (char.isOpcode()) {
+        } else if (char.isOperator()) {
             currentToken = parseOperatorToken()
         } else if (char.isStringLeader()) {
             currentToken = parseStringLiteralToken(char)
@@ -201,7 +201,7 @@ class Lexer(private val stream: CharStream) {
     private fun parseOperatorToken(): Token {
         stream.mark()
         var indexMap: Map<*, *> = operatorIndexMap
-        while (stream.currentChar?.isOpcode() == true) {
+        while (stream.currentChar?.isOperator() == true) {
             val type = indexMap[stream.currentChar] ?: break
             if (type is TokenType) {
                 stream.nextChar() // Consume the operator character
@@ -242,7 +242,7 @@ class Lexer(private val stream: CharStream) {
         while (stream.nextChar()?.isWhitespace() == true) {}
     }
 
-    private fun Char.isOpcode(): Boolean {
+    private fun Char.isOperator(): Boolean {
         return operatorIndexMap.contains(this)
     }
 
