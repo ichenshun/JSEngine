@@ -46,7 +46,7 @@ class EngineTest {
     }
 
     @Test
-    fun testFunctionCallBeforeDeclare() {
+    fun functionCanBeCalledBeforeDeclare() {
         val code = """
             var magic = "aaa"
             var testvar = addabc(1, 2)
@@ -99,12 +99,14 @@ class EngineTest {
             var arr = [1,2,3,4,5];
             console.log(arr[0]);
             console.log(arr[1]);
+            console.log(arr[1,2,3])
             console.log(arr);
         """
         Engine().evaluate(code)
         val excepted = """
             1
             2
+            4
             [ 1, 2, 3, 4, 5 ]
         """.trimIndent() + "\n"
         assertEquals(excepted, outputStreamCaptor.toString())

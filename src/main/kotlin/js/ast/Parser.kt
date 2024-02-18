@@ -782,7 +782,7 @@ class Parser(private val lexer: Lexer) {
             properties.add(parsePropertyAssignment())
         }
         while (isToken(TokenType.OPERATOR_COMMA)) {
-            requireToken(TokenType.OPERATOR_COMMA)
+            eatToken()
             if (!isToken(TokenType.OPERATOR_CLOSE_BRACE)) {
                 properties.add(parsePropertyAssignment())
             }
@@ -969,7 +969,8 @@ class Parser(private val lexer: Lexer) {
     private fun parseExpressionSequence(): ExpressionSequence {
         val expressions = mutableListOf<SingleExpression>()
         expressions.add(parseSingleExpression())
-        while (lexer.currentToken.type == TokenType.OPERATOR_COMMA) {
+        while (isToken(TokenType.OPERATOR_COMMA)) {
+            eatToken()
             expressions.add(parseSingleExpression())
         }
         return ExpressionSequence(expressions)
