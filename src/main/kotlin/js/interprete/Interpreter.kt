@@ -459,7 +459,12 @@ class Interpreter {
     }
 
     private fun evaluateTernaryExpression(context: ExecutionContext, ternaryExpression: TernaryExpression): Value {
-        TODO("Not yet implemented")
+        val condition = ternaryExpression.conditionExpression.evaluate(context)
+        return if (condition.asBoolean()) {
+            ternaryExpression.leftExpression.evaluate(context)
+        } else {
+            ternaryExpression.rightExpression.evaluate(context)
+        }
     }
 
     private fun evaluateAssignmentExpression(context: ExecutionContext, assignmentExpression: AssignmentExpression): Value {

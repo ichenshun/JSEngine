@@ -299,7 +299,6 @@ data class Argument(
 
 data class MemberDotExpression(
     val expression: SingleExpression,
-    val questionToken: Token?,
     val dotToken: Token,
     val hashtagToken: Token?,
     val identifier: Token
@@ -430,9 +429,9 @@ data class AssignmentExpression(
 ) : SingleExpression()
 
 data class TernaryExpression(
-    val leftExpression: SingleExpression,
+    val conditionExpression: SingleExpression,
     val questionToken: Token,
-    val middleExpression: SingleExpression,
+    val leftExpression: SingleExpression,
     val colonToken: Token,
     val rightExpression: SingleExpression
 ) : SingleExpression()

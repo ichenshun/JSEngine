@@ -31,9 +31,17 @@ class EngineTest {
             console.log(1 + 2)
             console.log(1/2)
             console.log(1 + 2 * 3)
+            console.log(2 * 3 + 4)
+            console.log(1 * 2 + 3 * 4)
             console.log((1 + 2)*3)
+            console.log(10 * (2 + 3))
+            console.log(10 * (2 + 3) + 2)
+            console.log(10 * 20 * 30 + 40)
+            console.log(10 * 20 / 40 - 40 * 50)
+            console.log(10 * 20 / ( 30 - 40 ) * 50)
             console.log(1 + 2*(2**3))
             console.log(1 + 2*2**3 / 2)
+            console.log(60 + 70 - 80 - 10 * 20 / ( 30 - 40 ) * 50)
             console.log((1<2) + 1)
             console.log((1>2) + 1)
             var c = 120
@@ -50,9 +58,17 @@ class EngineTest {
             3
             0.5
             7
+            10
+            14
             9
+            50
+            52
+            6040
+            -1995
+            -1000
             17
             9
+            1050
             2
             1
             120
@@ -194,7 +210,6 @@ class EngineTest {
 
     @Test
     fun localVariablesCannotBeReferencedFromOutside() {
-
         val code = """
             function test() {
                 var a = 10
@@ -262,5 +277,37 @@ class EngineTest {
             [ 1, 2, 3, 4, 5 ]
         """.trimIndent() + "\n"
         assertEquals(excepted, outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun ternaryExpressionCanBeEvaluatedCorrectly() {
+        val code = """
+            var a = 1;
+            console.log(a == 1 ? "a is 1" : "a is not 1")
+            console.log(a > 0 ? a < 10 ? a > 5 ? "a is between 5 and 10" : "a is between 0 and 5" : "a is great than 10" : " a is less than 0");
+        """
+        Engine().evaluate(code)
+        val expected = """
+            a is 1
+            a is between 0 and 5
+        """.trimIndent() + "\n"
+        assertEquals(expected, outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun engineInstancesCannotShareStateAmongEachOther() {
+        val code = """
+            var globalVar = 1;
+            console.log(globalVar);
+        """
+        Engine().evaluate(code)
+        assertEquals("1\n", outputStreamCaptor.toString())
+
+        val code2 = """
+            console.log(globalVar);
+        """
+        assertThrows<RuntimeException> {
+            Engine().evaluate(code2)
+        }
     }
 }

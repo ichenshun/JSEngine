@@ -468,16 +468,16 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseTernaryExpression(): SingleExpression {
-        var leftExpression = parseLogicalOrExpression()
-        if (lexer.currentToken.type == TokenType.OPERATOR_QUESTION_MARK) {
+        var conditionExpression = parseLogicalOrExpression()
+        if (isToken(TokenType.OPERATOR_QUESTION_MARK)) {
             val questionToken = requireToken(TokenType.OPERATOR_QUESTION_MARK)
-            val middleExpression = parseTernaryExpression()
+            val leftExpression = parseTernaryExpression()
             val colonToken = requireToken(TokenType.OPERATOR_COLON)
             val rightExpression = parseTernaryExpression()
-            leftExpression =
-                TernaryExpression(leftExpression, questionToken, middleExpression, colonToken, rightExpression)
+            conditionExpression =
+                TernaryExpression(conditionExpression, questionToken, leftExpression, colonToken, rightExpression)
         }
-        return leftExpression
+        return conditionExpression
     }
 
     private fun parseLogicalOrExpression(): SingleExpression {
@@ -684,8 +684,8 @@ class Parser(private val lexer: Lexer) {
         if (!isToken(TokenType.OPERATOR_CLOSE_PAREN)) {
             arguments.add(parseArgument())
             while (isToken(TokenType.OPERATOR_COMMA)) {
-                requireToken(TokenType.OPERATOR_COMMA)
-                if (lexer.currentToken.type != TokenType.OPERATOR_CLOSE_PAREN) {
+                eatToken()
+                if (!isToken(TokenType.OPERATOR_CLOSE_PAREN)) {
                     arguments.add(parseArgument())
                 } else {
                     break
@@ -703,14 +703,12 @@ class Parser(private val lexer: Lexer) {
 
     private fun parseMemberDotExpression(): SingleExpression {
         var leftExpression = parseMemberIndexExpression()
-        while (isToken(TokenType.OPERATOR_QUESTION_MARK, TokenType.OPERATOR_DOT)) {
-            val questionToke =
-                if (isToken(TokenType.OPERATOR_QUESTION_MARK)) requireToken(TokenType.OPERATOR_QUESTION_MARK) else null
-            val dotToken = requireToken(TokenType.OPERATOR_DOT)
-            val hastTagToken =
+        while (isToken(TokenType.OPERATOR_QUESTION_MARK_DOT, TokenType.OPERATOR_DOT)) {
+            val dotToken = requireToken(TokenType.OPERATOR_QUESTION_MARK_DOT, TokenType.OPERATOR_DOT)
+            val hashtagToken =
                 if (isToken(TokenType.OPERATOR_HASHTAG)) requireToken(TokenType.OPERATOR_HASHTAG) else null
             val identifier = requireToken(identifierName)
-            leftExpression = MemberDotExpression(leftExpression, questionToke, dotToken, hastTagToken, identifier)
+            leftExpression = MemberDotExpression(leftExpression, dotToken, hashtagToken, identifier)
         }
         return leftExpression
     }
