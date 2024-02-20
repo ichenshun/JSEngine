@@ -4,18 +4,18 @@ package js.interprete
 class BuiltInObject {
 
     fun register(context: ExecutionContext) {
-        context.setVariable("console", Value(ValueType.OBJECT, Console()))
+        context.setVariable("console", Console())
     }
 
-    class Console : Object() {
+    class Console : JsObject() {
 
         init {
-            setProperty("log", Value(ValueType.FUNCTION, FunctionNative(this::log)))
+            setProperty("log", JsFunctionNative(this::log))
         }
 
-        private fun log(arguments: List<Value>): Value {
+        private fun log(arguments: List<JsValue>): JsValue {
             println(arguments.joinToString(separator = " ") { it.asString() })
-            return Value.UNDEFINED
+            return JsUndefined
         }
     }
 

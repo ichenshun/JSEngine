@@ -387,4 +387,19 @@ class EngineTest {
             Engine().evaluate(code2)
         }
     }
+
+    @Test
+    fun thisCanBeUsedInGlobalContext() {
+        val code = """
+            console.log(this);
+            this.name = ["Bob", "Smith"]
+            console.log(this.name[0])
+        """
+        Engine().evaluate(code)
+        val expected = """
+            {}
+            Bob
+        """.trimIndent() + "\n"
+        assertEquals(expected, outputStreamCaptor.toString())
+    }
 }
