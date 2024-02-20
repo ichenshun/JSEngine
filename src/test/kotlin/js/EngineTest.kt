@@ -402,4 +402,23 @@ class EngineTest {
         """.trimIndent() + "\n"
         assertEquals(expected, outputStreamCaptor.toString())
     }
+
+    @Test
+    fun stringTemplateCanBeUsed() {
+        var code = """
+            var a = 1;
+            console.log(`a is ${'$'}{a}`)
+            const a = 5;
+            const b = 10;
+            console.log(`Fifteen is ${'$'}{a + b} and
+                not ${'$'}{2 * a + b}.`);
+        """
+        Engine().evaluate(code)
+        var expected = """
+            a is 1
+            Fifteen is 15 and
+        """.trimIndent() + """
+                not 20.""" + "\n"
+        assertEquals(expected, outputStreamCaptor.toString())
+    }
 }

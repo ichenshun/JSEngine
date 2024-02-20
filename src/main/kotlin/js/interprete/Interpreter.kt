@@ -207,6 +207,7 @@ class Interpreter {
             is SuperExpression ->  return evaluateSuperExpression(context, this)
             is LiteralExpression ->  return evaluateLiteralExpression(context, this)
             is StringLiteralExpression -> return JsString(value.value)
+            is TemplateStringLiteral -> return evaluateTemplateStringLiteral(context, this)
             is NumericLiteralExpression -> return JsNumber(value.value.toDouble())
             is BooleanLiteralExpression -> return JsBoolean(value.value == "true")
             is ArrayLiteralExpression -> return evaluateArrayLiteralExpression(context, this)
@@ -214,6 +215,23 @@ class Interpreter {
             is ParenthesizedExpression -> return evaluateParenthesizedExpression(context, this)
             else -> throw RuntimeException("Unsupported expression: $this")
         }
+    }
+
+    private fun evaluateTemplateStringLiteral(
+        context: ExecutionContext,
+        templateStringLiteral: TemplateStringLiteral
+    ): JsValue {
+        val sb = StringBuilder()
+        var index = 0
+        templateStringLiteral.expressionParts.forEach {
+            sb.appendRange(templateStringLiteral.templateString, index, it.first.first)
+            index = it.first.last + 1
+            sb.append(it.second.evaluate(context).asString())
+        }
+        if (index < templateStringLiteral.templateString.length) {
+            sb.append(templateStringLiteral.templateString.substring(index))
+        }
+        return JsString(sb.toString())
     }
 
     private fun evaluateIdentifierExpression(context: ExecutionContext, identifierExpression: IdentifierExpression): JsValue {
@@ -433,7 +451,7 @@ class Interpreter {
         return when (equalityExpression.operator.type) {
             TokenType.OPERATOR_EQUAL -> JsBoolean(leftValue == rightValue)
             TokenType.OPERATOR_NOT_EQUAL -> JsBoolean(leftValue != rightValue)
-            // TODO: 处理对象想等
+            // TODO: 处理对象相等
             TokenType.OPERATOR_IDENTITY_EQUAL -> JsBoolean(leftValue === rightValue)
             TokenType.OPERATOR_IDENTITY_NOT_EQUAL -> JsBoolean(leftValue !== rightValue)
             else -> throw IllegalArgumentException("Invalid operator: ${equalityExpression.operator.type}")
@@ -523,7 +541,7 @@ class Interpreter {
         try {
             return context.getVariable("this")
         } catch (e: RuntimeException) {
-            // 如果找不到变量"this"，则返回null
+            // 如果找不到变量"this"，则创建一个新的JsObject对象并将其赋值给变量"this"
             val value = JsObject()
             context.setVariable("this", value)
             return value

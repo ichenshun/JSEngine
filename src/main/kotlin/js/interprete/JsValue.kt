@@ -10,7 +10,7 @@ interface JsValue {
     fun asString(): String
 }
 
-class JsNumber(private val value: Double) : JsValue {
+data class JsNumber(private val value: Double) : JsValue {
     override fun asBoolean(): Boolean {
         return value != 0.0
     }
@@ -29,7 +29,7 @@ class JsNumber(private val value: Double) : JsValue {
     }
 }
 
-class JsString(private val value: String) : JsValue {
+data class JsString(private val value: String) : JsValue {
     override fun asBoolean(): Boolean {
         return value != "false"
     }
@@ -43,7 +43,7 @@ class JsString(private val value: String) : JsValue {
     }
 }
 
-class JsBoolean(private val value: Boolean): JsValue {
+data class JsBoolean(private val value: Boolean): JsValue {
    override fun asBoolean(): Boolean {
         return value
     }

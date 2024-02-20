@@ -173,15 +173,28 @@ class Lexer(private val stream: CharStream) {
             currentToken = parseOperatorToken()
         } else if (char.isStringLeader()) {
             currentToken = parseStringLiteralToken(char)
+        } else if (char == '`') {
+            currentToken = parseTemplateStringLiteralToken()
         } else if (char.isDigit()) {
             currentToken = parseNumberLiteralToken()
         } else if (char.isWhitespace()) {
             skipWhitespaceChars()
             currentToken = nextToken()
         } else {
-            throw IllegalArgumentException("Invalid character: $char")
+            throw ParseException("Invalid character: $char")
         }
         return currentToken
+    }
+
+    private fun parseTemplateStringLiteralToken(): Token {
+        stream.nextChar()
+        stream.mark()
+        while (stream.currentChar != '`') {
+            stream.nextChar()
+        }
+        val substring = stream.substring()
+        stream.nextChar()
+        return Token(TokenType.TEMPLATE_STRING_LITERAL, substring)
     }
 
     private fun parseNumberLiteralToken(): Token {

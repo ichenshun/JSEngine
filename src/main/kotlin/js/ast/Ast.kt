@@ -469,8 +469,9 @@ data class TemplateStringExpression(
 ) : SingleExpression()
 
 data class TemplateStringLiteral(
-    val parts: List<String>
-) : Node()
+    val templateString: String,
+    val expressionParts: List<Pair<IntRange, SingleExpression>>,
+) : SingleExpression()
 
 data class AssignmentOperatorExpression(
     val leftExpression: SingleExpression,
