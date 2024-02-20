@@ -58,7 +58,7 @@ data class FunctionDeclaration(
     val openParenToken: Token,
     val parameters: List<Token>,
     val closeParenToken: Token,
-    val body: FunctionBody
+    val functionBody: FunctionBody
 ) : Statement()
 
 data class FunctionBody(
@@ -241,10 +241,14 @@ data class ExpressionSequence(
     }
 }
 
-data class FunctionExpression(
-    val name: Token?,
+data class AnonymousFunctionExpression(
+    val asyncToken: Token?,
+    val functionToken: Token,
+    val asteriskToken: Token?,
+    val openParenToken: Token,
     val parameters: List<Token>,
-    val body: FunctionBody
+    val closeParenToken: Token,
+    val functionBody: FunctionBody
 ) : SingleExpression()
 
 data class NewExpression(
@@ -346,7 +350,9 @@ data class AwaitExpression(
     val expression: SingleExpression
 ) : SingleExpression()
 
-class ThisExpression : SingleExpression()
+data class ThisExpression(
+    val thisToken: Token
+) : SingleExpression()
 
 data class IdentifierExpression(
     val name: Token

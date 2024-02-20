@@ -123,7 +123,7 @@ class Interpreter {
     }
 
     private fun evaluateFunctionDeclaration(context: ExecutionContext, functionDeclaration: FunctionDeclaration): Value {
-        val value = Value(ValueType.FUNCTION, FunctionCustom(functionDeclaration))
+        val value = Value(ValueType.FUNCTION, FunctionCustom(functionDeclaration.parameters, functionDeclaration.functionBody))
         context.setVariable(functionDeclaration.functionName.value, value)
         return value
     }
@@ -164,7 +164,7 @@ class Interpreter {
     private fun SingleExpression.evaluate(context: ExecutionContext): Value {
         when (this) {
             is ExpressionSequence -> return evaluateExpressionSequence(context, this)
-            is FunctionExpression -> return evaluateFunctionExpression(context, this)
+            is AnonymousFunctionExpression -> return evaluateAnonymousFunctionExpression(context, this)
             is OptionalChainExpression -> return evaluateOptionalChainExpression(context, this)
             is MemberIndexExpression -> return evaluateMemberIndexExpression(context, this)
             is MemberDotExpression -> return evaluateMemberDotExpression(context, this)
@@ -203,7 +203,6 @@ class Interpreter {
             is TemplateStringExpression -> return evaluateTemplateStringExpression(context, this)
             is YieldExpression -> return evaluateYieldExpression(context, this)
             is ThisExpression -> return evaluateThisExpression(context, this)
-            // TODO 同名的变量覆盖问题
             is IdentifierExpression -> return evaluateIdentifierExpression(context, this)
             is SuperExpression ->  return evaluateSuperExpression(context, this)
             is LiteralExpression ->  return evaluateLiteralExpression(context, this)
@@ -221,8 +220,12 @@ class Interpreter {
         return context.getVariable(identifierExpression.name.value)
     }
 
-    private fun evaluateFunctionExpression(context: ExecutionContext, functionExpression: FunctionExpression): Value {
-        TODO("Not yet implemented")
+    private fun evaluateAnonymousFunctionExpression(
+        context: ExecutionContext,
+        anonymousFunctionExpression: AnonymousFunctionExpression
+    ): Value {
+        return Value(ValueType.FUNCTION, FunctionCustom(anonymousFunctionExpression.parameters,
+            anonymousFunctionExpression.functionBody))
     }
 
     private fun evaluateOptionalChainExpression(context: ExecutionContext, optionalChainExpression: OptionalChainExpression): Value {
@@ -251,7 +254,11 @@ class Interpreter {
         // 执行属性访问
         // 查找对象表，找到属性对应的值
         // 返回属性对应的值
-        return jsObject.getProperty(memberDotExpression.identifier.value)
+        val propertyValue = jsObject.getProperty(memberDotExpression.identifier.value)
+        if (propertyValue.valueType == ValueType.FUNCTION) {
+            context.setVariable("this", value)
+        }
+        return propertyValue
     }
 
     private fun evaluateNewExpression(context: ExecutionContext, newExpression: NewExpression): Value {
@@ -259,12 +266,12 @@ class Interpreter {
     }
 
     private fun evaluateArgumentsExpression(context: ExecutionContext, argumentsExpression: ArgumentsExpression): Value {
+        val argumentList = argumentsExpression.argumentList.arguments.map { it.expression.evaluate(context) }
         val value = argumentsExpression.expression.evaluate(context)
         if (value.valueType != ValueType.FUNCTION) {
             throw RuntimeException("Cannot call non-function: $value")
         }
         // 执行函数调用
-        val argumentList = argumentsExpression.argumentList.arguments.map { it.expression.evaluate(context) }
         val function = value.value as Function
         return function.call(context,this, argumentList)
     }
@@ -503,7 +510,7 @@ class Interpreter {
     }
 
     private fun evaluateThisExpression(context: ExecutionContext, thisExpression: ThisExpression): Value {
-        TODO("Not yet implemented")
+        return context.getVariable("this")
     }
 
     private fun evaluateSuperExpression(context: ExecutionContext, superExpression: SuperExpression): Value {

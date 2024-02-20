@@ -1,6 +1,6 @@
 package js.interprete
 
-class ExecutionContext(val parentContext: ExecutionContext?) {
+class ExecutionContext(private val parentContext: ExecutionContext?) {
     private val variables = mutableMapOf<String, Value>()
 
     fun getVariable(name: String): Value {
@@ -8,7 +8,7 @@ class ExecutionContext(val parentContext: ExecutionContext?) {
         // 如果未找到，则检查父上下文
         // 如果还是未找到，则抛出异常
         var value = variables[name]
-        while (value == null && parentContext != null) {
+        if (value == null && parentContext != null) {
             value = parentContext.getVariable(name)
         }
         return value ?: throw RuntimeException("Variable '$name' not found")
