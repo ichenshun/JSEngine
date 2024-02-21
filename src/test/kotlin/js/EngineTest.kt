@@ -312,6 +312,7 @@ class EngineTest {
             console.log(person.bbb123)
             console.log(person.true)
             console.log(person.null)
+            console.log(person["122"])
         """
         Engine().evaluate(code)
         val expected = """
@@ -319,6 +320,7 @@ class EngineTest {
             add function
             abcdefg
             nullll
+            122
         """.trimIndent() + "\n"
         assertEquals(expected, outputStreamCaptor.toString())
     }
@@ -373,6 +375,7 @@ class EngineTest {
             console.log(arr[1]);
             console.log(arr[1,2,3])
             console.log(arr);
+            console.log(arr[1/2]);
         """
         Engine().evaluate(code)
         val excepted = """
@@ -380,6 +383,7 @@ class EngineTest {
             2
             4
             [ 1, 2, 3, 4, 5 ]
+            undefined
         """.trimIndent() + "\n"
         assertEquals(excepted, outputStreamCaptor.toString())
     }
@@ -453,11 +457,25 @@ class EngineTest {
 
     @Test
     fun emptyExpressionInTemplateStringIsNotAllowed() {
-        val code =  """
+        val code = """
             console.log(`${'$'}{}`
         """
         assertThrows<SyntaxError> {
             Engine().evaluate(code)
         }
+    }
+
+    @Test
+    fun arrayElementCanBeAssignedTo() {
+        val code = """
+            var a = [1, 2, 3];
+            a[1] = 5;
+            console.log(a[1])
+        """
+        Engine().evaluate(code)
+        val expected = """
+            5
+        """.trimIndent() + "\n"
+        assertEquals(expected, outputStreamCaptor.toString())
     }
 }

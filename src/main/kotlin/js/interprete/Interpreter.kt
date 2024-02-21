@@ -251,32 +251,11 @@ class Interpreter {
     }
 
     private fun evaluateMemberIndexExpression(context: ExecutionContext, memberIndexExpression: MemberIndexExpression): JsValue {
-        val value = memberIndexExpression.leftExpression.evaluate(context)
-        if (value !is JsObject) {
-            throw RuntimeException("Member access on non-object: $value")
-        }
-        val index = memberIndexExpression.expressionSequence.evaluate(context)
-        if (index is JsNumber) {
-            // TODO 小数不能作为数组的索引
-            return (value as JsArray).getElement(index.asNumber().toInt())
-        }
-        return value.getProperty(index.asString())
+        return getVariableReference(context, memberIndexExpression).getValue()
     }
 
     private fun evaluateMemberDotExpression(context: ExecutionContext, memberDotExpression: MemberDotExpression): JsValue {
-        val value = memberDotExpression.expression.evaluate(context)
-        if (value !is JsObject) {
-            throw RuntimeException("Member access on non-object: $value")
-        }
-        // 执行属性访问
-        // 查找对象表，找到属性对应的值
-        // 返回属性对应的值
-        val propertyValue = value.getProperty(memberDotExpression.identifier.value)
-        if (propertyValue is JsFunction) {
-            // 将函数和对象绑定
-            context.setVariable("this", value)
-        }
-        return propertyValue
+        return getVariableReference(context, memberDotExpression).getValue()
     }
 
     private fun evaluateNewExpression(context: ExecutionContext, newExpression: NewExpression): JsValue {
@@ -294,54 +273,33 @@ class Interpreter {
     }
 
     private fun evaluatePostIncrementExpression(context: ExecutionContext, postIncrementExpression: PostIncrementExpression): JsValue {
-        when (postIncrementExpression.expression) {
-            is IdentifierExpression -> {
-                val value = postIncrementExpression.expression.evaluate(context)
-                context.setVariable(postIncrementExpression.expression.name.value, JsNumber(value.asNumber() + 1))
-                return value
-            }
-            else ->
-                throw RuntimeException("Cannot increment non-variable: ${postIncrementExpression.expression}")
-        }
-
+        val variableReference = getVariableReference(context, postIncrementExpression.expression)
+        val value = variableReference.getValue()
+        variableReference.setValue(JsNumber(value.asNumber() + 1))
+        return value
     }
 
     private fun evaluatePostDecreaseExpression(context: ExecutionContext, postDecreaseExpression: PostDecreaseExpression): JsValue {
-        when (postDecreaseExpression.expression) {
-            is IdentifierExpression -> {
-                val value = postDecreaseExpression.expression.evaluate(context)
-                context.setVariable(postDecreaseExpression.expression.name.value, JsNumber(value.asNumber() - 1))
-                return value
-            }
-            else ->
-                throw RuntimeException("Cannot increment non-variable: ${postDecreaseExpression.expression}")
-        }
+        val variableReference = getVariableReference(context, postDecreaseExpression.expression)
+        val value = variableReference.getValue()
+        variableReference.setValue(JsNumber(value.asNumber() - 1))
+        return value
     }
 
     private fun evaluatePreIncrementExpression(context: ExecutionContext, preIncrementExpression: PreIncrementExpression): JsValue {
-        when (preIncrementExpression.expression) {
-            is IdentifierExpression -> {
-                val value = preIncrementExpression.expression.evaluate(context)
-                val incrementValue = JsNumber(value.asNumber() + 1)
-                context.setVariable(preIncrementExpression.expression.name.value, incrementValue)
-                return incrementValue
-            }
-            else ->
-                throw RuntimeException("Cannot increment non-variable: ${preIncrementExpression.expression}")
-        }
+        val variableReference = getVariableReference(context, preIncrementExpression.expression)
+        val value = variableReference.getValue()
+        val incrementValue = JsNumber(value.asNumber() + 1)
+        variableReference.setValue(incrementValue)
+        return incrementValue
     }
 
     private fun evaluatePreDecreaseExpression(context: ExecutionContext, preDecreaseExpression: PreDecreaseExpression): JsValue {
-        when (preDecreaseExpression.expression) {
-            is IdentifierExpression -> {
-                val value = preDecreaseExpression.expression.evaluate(context)
-                val incrementValue = JsNumber(value.asNumber() - 1)
-                context.setVariable(preDecreaseExpression.expression.name.value, incrementValue)
-                return incrementValue
-            }
-            else ->
-                throw RuntimeException("Cannot increment non-variable: ${preDecreaseExpression.expression}")
-        }
+        val variableReference = getVariableReference(context, preDecreaseExpression.expression)
+        val value = variableReference.getValue()
+        val decreaseValue = JsNumber(value.asNumber() - 1)
+        variableReference.setValue(decreaseValue)
+        return decreaseValue
     }
 
     private fun evaluateDeleteExpression(context: ExecutionContext, deleteExpression: DeleteExpression): JsValue {
@@ -495,30 +453,36 @@ class Interpreter {
         }
     }
 
-    private fun evaluateAssignmentExpression(context: ExecutionContext, assignmentExpression: AssignmentExpression): JsValue {
-        when (assignmentExpression.leftExpression) {
+    private fun getVariableReference(context: ExecutionContext, expression: SingleExpression): VariableReference {
+        when (expression) {
             is IdentifierExpression -> {
-                val value = assignmentExpression.rightExpression.evaluate(context)
-                context.setVariable(
-                    assignmentExpression.leftExpression.name.value,
-                    value
-                )
-                return value
+                return IdentifierVariableReference(context, expression.name.value)
             }
             is MemberDotExpression -> {
-                // TODO 实现求地址运算
-                val jsObject = assignmentExpression.leftExpression.expression.evaluate(context)
-                val propertyName = assignmentExpression.leftExpression.identifier.value
-                if (jsObject !is JsObject){
-                    throw RuntimeException("Unsupported left expression type: ${assignmentExpression.leftExpression::class.simpleName}")
+                val jsObject = expression.expression.evaluate(context)
+                if (jsObject !is JsObject) {
+                    throw RuntimeException("Unsupported left expression type: $expression")
                 }
-                val value = assignmentExpression.rightExpression.evaluate(context)
-                jsObject.setProperty(propertyName, value)
-                return value
+                return MemberVariableReference(context, jsObject, expression.identifier.value)
+            }
+            is MemberIndexExpression -> {
+                val jsObject = expression.expression.evaluate(context)
+                if (jsObject !is JsObject) {
+                    throw RuntimeException("Unsupported left expression type: $expression")
+                }
+                val index = expression.indexExpression.evaluate(context)
+                return MemberVariableReference(context, jsObject, index.asString())
             }
             else ->
-                throw RuntimeException("Unsupported left expression type: ${assignmentExpression.leftExpression::class.simpleName}")
+                throw RuntimeException("Unsupported left expression type: $expression")
         }
+    }
+
+    private fun evaluateAssignmentExpression(context: ExecutionContext, assignmentExpression: AssignmentExpression): JsValue {
+        val variableReference = getVariableReference(context, assignmentExpression.leftExpression)
+        val value = assignmentExpression.rightExpression.evaluate(context)
+        variableReference.setValue(value)
+        return value
     }
 
     private fun evaluateAssignmentOperatorExpression(context: ExecutionContext, assignmentOperatorExpression: AssignmentOperatorExpression): JsValue {

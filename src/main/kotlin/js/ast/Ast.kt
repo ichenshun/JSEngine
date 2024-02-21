@@ -309,10 +309,10 @@ data class MemberDotExpression(
 ) : SingleExpression()
 
 data class MemberIndexExpression(
-    val leftExpression: SingleExpression,
+    val expression: SingleExpression,
     val questionDotToken: Token?,
     val openBracketToken: Token,
-    val expressionSequence: ExpressionSequence,
+    val indexExpression: ExpressionSequence,
     val closeBracketToken: Token,
 ) : SingleExpression()
 
