@@ -153,13 +153,14 @@ class EngineTest {
     }
 
     @Test
-    fun testString() {
+    fun stringCanBeDefinedAndConcatenated() {
         val code = """
             console.log('Hello, World!')
             console.log(123+"456")
             console.log(123+456)
             console.log("456" + 123)
             console.log(true+"123")
+            console.log("abc" + "bcd")
         """
         Engine().evaluate(code)
         val excepted = """
@@ -168,8 +169,20 @@ class EngineTest {
             579
             456123
             true123
+            abcbcd
         """.trimIndent() + "\n"
         assertEquals(excepted, outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun stringCannotBeTerminatedWithLineBreak() {
+        val code = """
+            console.log("Hello,
+                World!")
+        """
+        assertThrows<SyntaxError> {
+            Engine().evaluate(code)
+        }
     }
 
     @Test

@@ -228,24 +228,16 @@ class Lexer(private val stream: CharStream) {
     }
 
     private fun parseStringLiteralToken(leadChar: Char): Token {
-        // 跳过""字符
+        // 跳过字符串引导字符
         stream.nextChar()
         stream.mark()
         while (stream.currentChar != leadChar) {
             stream.nextChar()
+            if (stream.currentChar == null || stream.currentChar == '\n') {
+                throw SyntaxError("Unterminated string literal")
+            }
+            // TODO 需要考虑转义字符
         }
-//        {
-
-//            val char = stream.currentChar
-//            if (char == leadChar) {
-//                return Token(TokenType.STRING_LITERAL, stream.substring())
-//            }
-//            if (char == null || char == '\n') {
-//                // 需要返回词法分析错误
-//            }
-            // 需要考虑连接行
-            // 需要考虑转义字符
-//        }
         val substring = stream.substring()
         stream.nextChar()
         return Token(TokenType.STRING_LITERAL, substring)
