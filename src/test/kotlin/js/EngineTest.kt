@@ -1,5 +1,6 @@
 package js
 
+import js.ast.SyntaxError
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -405,7 +406,7 @@ class EngineTest {
 
     @Test
     fun stringTemplateCanBeUsed() {
-        var code = """
+        val code = """
             var a = 1;
             console.log(`a is ${'$'}{a}`)
             const a = 5;
@@ -414,11 +415,18 @@ class EngineTest {
                 not ${'$'}{2 * a + b}.`);
         """
         Engine().evaluate(code)
-        var expected = """
+        val expected = """
             a is 1
             Fifteen is 15 and
         """.trimIndent() + """
                 not 20.""" + "\n"
         assertEquals(expected, outputStreamCaptor.toString())
+
+        val code2 =  """
+            console.log(`${'$'}{}`
+        """
+        assertThrows<SyntaxError> {
+            Engine().evaluate(code2)
+        }
     }
 }

@@ -326,26 +326,26 @@ class Parser(private val lexer: Lexer) {
 
         if (lexer.currentToken.type == TokenType.OPERATOR_SEMICOLON) {
             if (await) {
-                throw ParseException("Unexpected 'await' keyword before ';'")
+                throw SyntaxError("Unexpected 'await' keyword before ';'")
             }
             return parseForStatement(expressionSequence ?: variableDeclarationList)
         } else {
             if (expressionSequence == null && variableDeclarationList == null) {
-                throw ParseException("For-in/of statement requires a single expression or variable declaration list")
+                throw SyntaxError("For-in/of statement requires a single expression or variable declaration list")
             }
             if (expressionSequence != null && !expressionSequence.isSingleExpression()) {
-                throw ParseException("For-in/of statement requires a single expression")
+                throw SyntaxError("For-in/of statement requires a single expression")
             }
             if (lexer.currentToken.type == TokenType.KEYWORD_IN) {
                 if (await) {
-                    throw ParseException("Unexpected 'await' keyword before keyword 'in'")
+                    throw SyntaxError("Unexpected 'await' keyword before keyword 'in'")
                 }
                 if (expressionSequence != null) {
                     return parseForInStatement(expressionSequence.asSingleExpression())
                 } else if (variableDeclarationList != null) {
                     return parseForInStatement(variableDeclarationList)
                 } else {
-                    throw ParseException("For-in/of statement requires a single expression or variable declaration list")
+                    throw SyntaxError("For-in/of statement requires a single expression or variable declaration list")
                 }
             } else if (lexer.currentToken.type == TokenType.KEYWORD_OF) {
                 if (expressionSequence != null) {
@@ -353,10 +353,10 @@ class Parser(private val lexer: Lexer) {
                 } else if (variableDeclarationList != null) {
                     return parseForOfStatement(await, variableDeclarationList)
                 } else {
-                    throw ParseException("For-in/of statement requires a single expression or variable declaration list")
+                    throw SyntaxError("For-in/of statement requires a single expression or variable declaration list")
                 }
             } else {
-                throw ParseException("For-in/of statement requires 'in' or 'of' keyword")
+                throw SyntaxError("For-in/of statement requires 'in' or 'of' keyword")
             }
         }
     }
@@ -448,13 +448,13 @@ class Parser(private val lexer: Lexer) {
             }
             val expressionEndIndex = templateString.indexOf("}", expressionStartIndex + 2)
             if (expressionEndIndex == -1) {
-                throw ParseException("Unclosed template string expression")
+                throw SyntaxError("Unclosed template string expression")
             }
             val expressionString = templateString.substring(expressionStartIndex + 2, expressionEndIndex)
             val parser = Parser(Lexer(CharStream(expressionString)))
             val expression = parser.parseSingleExpression()
             if (!parser.isToken(TokenType.EOF)) {
-                throw ParseException("Expected end of expression, got ${parser.lexer.currentToken}")
+                throw SyntaxError("Expected end of expression, got ${parser.lexer.currentToken}")
             }
             expressionParts.add(Pair(IntRange(expressionStartIndex, expressionEndIndex), expression))
             fromIndex = expressionEndIndex + 1
@@ -777,7 +777,7 @@ class Parser(private val lexer: Lexer) {
             TokenType.REGEX_LITERAL -> return parseRegularExpressionLiteralExpression()
             TokenType.OPERATOR_OPEN_BRACKET -> return parseArrayLiteralExpression()
             TokenType.OPERATOR_OPEN_BRACE -> return parseObjectLiteralExpression()
-            else -> throw ParseException("Unexpected token: " + lexer.currentToken)
+            else -> throw SyntaxError("Unexpected token: " + lexer.currentToken)
         }
     }
 
@@ -816,7 +816,7 @@ class Parser(private val lexer: Lexer) {
             isToken(TokenType.STRING_LITERAL) -> StringLiteralPropertyName(eatToken())
             isToken(TokenType.NUMBER_LITERAL) -> NumericLiteralPropertyName(eatToken())
             isToken(TokenType.OPERATOR_OPEN_BRACKET) -> parseComputedPropertyName()
-            else -> throw ParseException("Unexpected token: " + lexer.currentToken)
+            else -> throw SyntaxError("Unexpected token: " + lexer.currentToken)
         }
     }
 
@@ -999,7 +999,7 @@ class Parser(private val lexer: Lexer) {
             lexer.nextToken()
             return currentToken
         } else {
-            throw ParseException("Expected token type ${tokenTypes.contentToString()} but got ${lexer.currentToken.type}")
+            throw SyntaxError("Expected token type ${tokenTypes.contentToString()} but got ${lexer.currentToken.type}")
         }
     }
 
@@ -1009,7 +1009,7 @@ class Parser(private val lexer: Lexer) {
             lexer.nextToken()
             return currentToken
         } else {
-            throw ParseException("Unexpected token type ${lexer.currentToken.type}")
+            throw SyntaxError("Unexpected token type ${lexer.currentToken.type}")
         }
     }
 

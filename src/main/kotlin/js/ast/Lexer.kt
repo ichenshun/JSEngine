@@ -181,7 +181,7 @@ class Lexer(private val stream: CharStream) {
             skipWhitespaceChars()
             currentToken = nextToken()
         } else {
-            throw ParseException("Invalid character: $char")
+            throw SyntaxError("Invalid character: $char")
         }
         return currentToken
     }
