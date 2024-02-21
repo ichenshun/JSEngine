@@ -314,14 +314,14 @@ class EngineTest {
     fun objectPropertyCanBeFunction() {
         val code = """
             const person = {
-              name: ["Bob", "Smith"],
-              age: 32,
-              bio: function () {
-                console.log(this.name[0] + " " + this.name[1] + " 现在 " + this.age + " 岁了。");
-              },
-              introduceSelf: function () {
-                console.log("你好！我是 " + this.name[0] + "。");
-              },
+                name: ["Bob", "Smith"],
+                age: 32,
+                bio: function () {
+                    console.log(`${'$'}{this.name[0]} ${'$'}{this.name[1]} 现在 ${'$'}{this.age} 岁了。`);
+                },
+                introduceSelf: function () {
+                    console.log(`你好！我是 ${'$'}{this.name[0]}。`);
+                },
             };
             person.name;
             person.name[0];
@@ -335,6 +335,21 @@ class EngineTest {
             你好！我是 Bob。
         """.trimIndent() + "\n"
         assertEquals(expected, outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun objectPropertyCanBeObject() {
+        val code = """
+            const person = {
+                name: {
+                    first: "Bob",
+                    last: "Smith",
+                },
+            };
+            console.log(person.name.first, person["name"]["last"])
+        """
+        Engine().evaluate(code)
+        assertEquals("Bob Smith", outputStreamCaptor.toString().trim())
     }
 
     @Test
@@ -405,7 +420,7 @@ class EngineTest {
     }
 
     @Test
-    fun stringTemplateCanBeUsed() {
+    fun templateStringCanBeUsedCorrectly() {
         val code = """
             var a = 1;
             console.log(`a is ${'$'}{a}`)
@@ -421,12 +436,15 @@ class EngineTest {
         """.trimIndent() + """
                 not 20.""" + "\n"
         assertEquals(expected, outputStreamCaptor.toString())
+    }
 
-        val code2 =  """
+    @Test
+    fun emptyExpressionInTemplateStringIsNotAllowed() {
+        val code =  """
             console.log(`${'$'}{}`
         """
         assertThrows<SyntaxError> {
-            Engine().evaluate(code2)
+            Engine().evaluate(code)
         }
     }
 }
