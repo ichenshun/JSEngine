@@ -1,14 +1,23 @@
 package js.interprete
 
 open class JsObject : JsValue {
-    private val properties = mutableMapOf<String, JsValue>()
+    val indexProperties = sortedMapOf<String, JsValue>(compareBy { it.toInt() })
+    val nameProperties = mutableMapOf<String, JsValue>()
 
     fun getProperty(name: String): JsValue {
-        return properties[name]?: JsUndefined
+        return if (name.isJsInt()) {
+            indexProperties[name] ?: JsUndefined
+        } else {
+            nameProperties[name] ?: JsUndefined
+        }
     }
 
     fun setProperty(name: String, value: JsValue) {
-        properties[name] = value
+        if (name.isJsInt()) {
+            indexProperties[name] = value
+        } else {
+            nameProperties[name] = value
+        }
     }
 
     override fun asBoolean(): Boolean {
@@ -21,8 +30,18 @@ open class JsObject : JsValue {
 
     override fun asString(): String {
         val sb = StringBuilder("{")
-        for ((name, value) in properties) {
-            sb.append(name).append(": ").append(value.asString()).append(", ")
+        var count = 0
+        val map = mutableMapOf<String, JsValue>()
+        map.putAll(indexProperties)
+        map.putAll(nameProperties)
+        for ((name, value) in map) {
+            sb.append(' ').appendName(name).append(": ").appendValue(value)
+            count++
+            if (count < map.size) {
+                sb.append(",")
+            } else {
+                sb.append(' ')
+            }
         }
         sb.append("}")
         return sb.toString()
@@ -30,34 +49,66 @@ open class JsObject : JsValue {
 }
 
 class JsArray : JsObject() {
-
-    private val elements = mutableListOf<JsValue>()
-
-    fun getElement(index: Int): JsValue {
-        return elements[index]
-    }
-
-    fun append(value: JsValue) {
-        val index = elements.size
-        elements.add(value)
-        setProperty(index.toString(), value)
-    }
-
-    fun setElement(index: Int, value: JsValue) {
-        elements[index] = value
-        setProperty(index.toString(), value)
-    }
-
     override fun asString(): String {
-        val buffer = StringBuilder()
-        buffer.append("[ ")
-        val lastElement = elements.last()
-        elements.dropLast(1).forEach {
-            buffer.append(it.asString())
-            buffer.append(", ")
+        val sb = StringBuilder()
+        sb.append("[")
+        var count = 0
+        val size = indexProperties.size + nameProperties.size
+        for ((_, value) in indexProperties) {
+            sb.append(' ').appendValue(value)
+            count++
+            if (count < size) {
+                sb.append(",")
+            } else {
+                sb.append(' ')
+            }
         }
-        buffer.append(lastElement.asString())
-        buffer.append(" ]")
-        return buffer.toString()
+        for ((name, value) in nameProperties) {
+            sb.append(' ').appendName(name).append(": ").appendValue(value)
+            count++
+            if (count < size) {
+                sb.append(",")
+            } else {
+                sb.append(' ')
+            }
+        }
+        sb.append("]")
+        return sb.toString()
     }
+}
+
+private fun String.isJsInt(): Boolean {
+    when (this.length) {
+        0 -> return false
+        1 -> return this[0].isDigit()
+        else -> {
+            if (this[0] == '0') {
+                return false
+            }
+            for (c in this.substring(1)) {
+                if (!c.isDigit()) {
+                    return false
+                }
+            }
+            return true
+        }
+    }
+}
+
+private fun StringBuilder.appendName(name: String): StringBuilder {
+    if (name.toDoubleOrNull() != null) {
+        this.append('\'').append(name).append('\'')
+    } else {
+        this.append(name)
+    }
+    return this
+}
+
+private fun StringBuilder.appendValue(value: JsValue): StringBuilder {
+    if (value is JsString) {
+        this.append('\'').append(value.asString()).append('\'')
+    } else {
+        this.append(value.asString())
+    }
+    return this
 }

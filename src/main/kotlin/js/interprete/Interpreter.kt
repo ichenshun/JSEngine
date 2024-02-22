@@ -522,8 +522,8 @@ class Interpreter {
 
     private fun evaluateArrayLiteralExpression(context: ExecutionContext, arrayLiteralExpression: ArrayLiteralExpression): JsValue {
         val jsArray = JsArray()
-        arrayLiteralExpression.elements.forEach {it ->
-            jsArray.append(it.expression.evaluate(context))
+        arrayLiteralExpression.elements.forEachIndexed { index, element ->
+            jsArray.setProperty(index.toString(), element.expression.evaluate(context))
         }
         return jsArray
     }

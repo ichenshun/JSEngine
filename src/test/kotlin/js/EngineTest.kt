@@ -376,6 +376,7 @@ class EngineTest {
             console.log(arr[1,2,3])
             console.log(arr);
             console.log(arr[1/2]);
+            console.log([])
         """
         Engine().evaluate(code)
         val excepted = """
@@ -384,8 +385,50 @@ class EngineTest {
             4
             [ 1, 2, 3, 4, 5 ]
             undefined
+            []
         """.trimIndent() + "\n"
         assertEquals(excepted, outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun arrayElementCanBeModified() {
+        val code = """
+            var arr = [1,2,3,4,5];
+            arr[1] = 10;
+            arr[1/2] = 1/2
+            console.log(arr);
+            console.log(arr["2"])
+            arr["02"] = "02"
+            console.log(arr);
+        """
+        Engine().evaluate(code)
+        val excepted = """
+            [ 1, 10, 3, 4, 5, '0.5': 0.5 ]
+            3
+            [ 1, 10, 3, 4, 5, '0.5': 0.5, '02': '02' ]
+        """.trimIndent() + "\n"
+        assertEquals(excepted, outputStreamCaptor.toString())
+    }
+
+    @Test
+    fun objectPropertyCanBeModifiedAndKeepInsertOrder() {
+        val code = """
+            var obj = {
+                name: "Bob",
+                age: 20,
+                gender: "male",
+                hobbies: ["reading", "swimming"],
+                info: {
+                    city: "Beijing",
+                    country: "China"
+                }
+            }
+            obj.name = "Alice";
+            console.log(obj);
+        """
+        Engine().evaluate(code)
+        assertEquals("{ name: 'Alice', age: 20, gender: 'male', hobbies: [ 'reading', 'swimming' ], info: { city: 'Beijing', country: 'China' } }\n",
+            outputStreamCaptor.toString())
     }
 
     @Test

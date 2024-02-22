@@ -1009,7 +1009,7 @@ class Parser(private val lexer: Lexer) {
             lexer.nextToken()
             return currentToken
         } else {
-            throw SyntaxError("Unexpected token type ${lexer.currentToken.type}")
+            throw SyntaxError("Unexpected token type ${lexer.currentToken}")
         }
     }
 
